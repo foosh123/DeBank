@@ -1,5 +1,7 @@
 pragma solidity >= 0.5.0;
 // pragma experimental ABIEncoderV2;
+import "./ERC20.sol";
+import "./DSMath.sol";
 
 contract LiquidityPool {
 
