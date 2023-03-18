@@ -157,5 +157,10 @@ contract LiquidityPool {
         return pools[choiceOfCurrency].lenderInterestRate;
     }
 
+    //transfer ownership to new owner
+    function transfer(uint256 loanId, address newOwner) public ownerOnly(loanId) validLoanId(loanId) {
+        loans[loanId].prevOwner = loans[loanId].owner;
+        loans[loanId].owner = newOwner;
+    }
 
 }
