@@ -2,6 +2,8 @@ pragma solidity >= 0.5.0;
 
 import "./ERC20.sol";
 import "./DSMath.sol";
+import "./PriceConsumerBTCUSD.sol";
+// import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract Helper {
 
@@ -9,7 +11,8 @@ contract Helper {
     //     uint256 platformFee;
     //     uint256 transactionFee; 
     // }
-
+    PriceConsumerBTCUSD btc_usd;
+    string public currentConversion;
     uint256 public platformFee;
     uint256 public transactionFee;
      constructor() public {
@@ -17,6 +20,9 @@ contract Helper {
         // transactionFee = transFee;
     }
 
+    function setCurrencyConversion(string memory conversion) public { // {'btc_usd', etc}
+        currentConversion = conversion;
+    }
 
     function setPlatformFee(uint256 amt) public {
         platformFee = amt;
