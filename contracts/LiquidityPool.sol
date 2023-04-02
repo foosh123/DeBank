@@ -115,6 +115,7 @@ contract LiquidityPool {
     function depositToLiquidityPool(string memory choiceOfCurrency, uint256 depositAmount) public {
 
         liquidityPool storage pool = pools[choiceOfCurrency];
+        uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
 
         bool isValidCurrency = false;
         for (uint i=0; i<currencyTypes.length; i++) {
@@ -126,7 +127,8 @@ contract LiquidityPool {
         require (depositAmount > 0, "Can't deposit 0 tokens");
         
         // uint256 existingAmount = pool.lenders[msg.sender];
-        pool.lenders[msg.sender] += depositAmount;
+        lenders[poolLoanId][msg.sender] += depositAmount;
+        // pool.lenders[msg.sender] += depositAmount;
 
         pool.poolAmount += depositAmount;
         // pool.lenders[msg.sender] = existingAmount;
@@ -138,6 +140,8 @@ contract LiquidityPool {
     function withdrawFromLiquidityPool(string memory choiceOfCurrency, uint256 withdrawalAmount) public {
 
         liquidityPool storage pool = pools[choiceOfCurrency];
+        uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
+
         bool isValidCurrency = false;
         for (uint i=0; i<currencyTypes.length; i++) {
             if(keccak256(abi.encodePacked(currencyTypes[i]))==keccak256(abi.encodePacked(choiceOfCurrency))) {
@@ -145,9 +149,9 @@ contract LiquidityPool {
             }
         }
         require (isValidCurrency == true, "The Currency is not supported yet!");
-        require (pool.lenders[msg.sender] >= withdrawalAmount, "Not enough tokens to withdraw");
+        require (lenders[poolLoanId][msg.sender] >= withdrawalAmount, "Not enough tokens to withdraw");
 
-        pool.lenders[msg.sender] = pool.lenders[msg.sender] - withdrawalAmount;
+        lenders[poolLoanId][msg.sender] = lenders[poolLoanId][msg.sender] - withdrawalAmount;
         pool.poolAmount -= withdrawalAmount;
 
         emit WithdrawalMade(msg.sender, choiceOfCurrency, withdrawalAmount);
@@ -166,14 +170,26 @@ contract LiquidityPool {
     }
 
     //----------getter methods-------------
+    function getBorrowerPoolLoanId(string memory choiceOfCurrency) public view returns (uint256) {
+        return pools[choiceOfCurrency].poolLoanId;
+    }
+
+    function getLenderPoolLoanId(string memory choiceOfCurrency) public view returns (uint256) {
+        return pools[choiceOfCurrency].poolLoanId;
+    }
+
+
     function getBorrowerLoanAmount(string memory choiceOfCurrency, address borrower) public view returns (uint256) {
-        return pools[choiceOfCurrency].borrowers[borrower];
+        uint256 poolLoanId = getBorrowerPoolLoanId(choiceOfCurrency);
+        return borrowers[poolLoanId][borrower];
+        // return pools[choiceOfCurrency].borrowers[borrower];
     }
 
     function getLenderLoanAmount(string memory choiceOfCurrency, address lender) public view returns (uint256) {
-        return pools[choiceOfCurrency].lenders[lender];
+        uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
+        return lenders[poolLoanId][lender];
+        // return pools[choiceOfCurrency].lenders[lender];
     }
-
 
     function getBorrowerInterestRate(string memory choiceOfCurrency) public view returns (uint256) {
         return pools[choiceOfCurrency].borrowerInterestRate;
