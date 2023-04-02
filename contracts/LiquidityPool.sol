@@ -17,7 +17,10 @@ contract LiquidityPool {
     // mapping(string => uint256) poolAmounts;
     // mapping(string => uint256) borrowerInterestRates;
     // mapping(string => uint256) lenderInterestRates;
-    
+
+    mapping(uint256 => mapping(address => uint256)) borrowers;
+    mapping(uint256 => mapping(address => uint256)) lenders;  
+    // uint256 poolLoanIdCount = 0;
     // mapping(address => uint256) public borrowers;
     // mapping(address => uint256) public lenders;
 
@@ -37,8 +40,9 @@ contract LiquidityPool {
         uint256 lenderInterestRate;
         address owner;
         address prevOwner;
-        mapping(address => uint256) borrowers;
-        mapping(address => uint256) lenders;        
+        uint256 poolLoanId;
+        // mapping(address => uint256) borrowers;
+        // mapping(address => uint256) lenders;        
     }
 
     uint256 public numPools = 0;
@@ -77,12 +81,14 @@ contract LiquidityPool {
         liquidityPool memory newLiquidityPool = liquidityPool(
             currencyType,
             msg.value,     
-            // borrowerInterestRate,
-            // lenderInterestRate,
+            0,
+            0,
             msg.sender,  //owner
-            address(0) //prev owner
+            address(0), //prev owner
+            numPools
         );
         
+        numPools++;
         // uint256 newPoolId = numPools++;
         pools[currencyType] = newLiquidityPool; //commit to state variable
         currencyTypes.push(currencyType);
