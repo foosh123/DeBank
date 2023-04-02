@@ -4,16 +4,20 @@ pragma solidity >= 0.5.0;
 
 contract LiquidityPoolLoan {
 
-    enum currency { BTC, ETH, BNB, USDT, SOL, XRP}
+    // enum currency { BTC, ETH, BNB, USDT, SOL, XRP}
     enum loanType { lend, borrow}
+
+    string[] currencyPoolId; 
+    
 
     struct liquidityPoolLoan {
         loanType loanType;
-        currency currency;
+        address loaner;
+        // currency currency;
         uint256 amount;
-        uint256 startedDate;
-        address owner;
-        address prevOwner;
+        // uint256 startedDate;
+        // address owner;
+        // address prevOwner;
         // Ex1
     }
 
