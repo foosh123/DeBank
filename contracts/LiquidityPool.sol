@@ -3,35 +3,21 @@ pragma solidity >= 0.5.0;
 import "./ERC20.sol";
 import "./DSMath.sol";
 import "./RNG.sol";
+import "./Cro.sol";
+import "./Shib.sol";
+import "./Uni.sol";
 
 contract LiquidityPool {
 
-    // { BTC, ETH, BNB, USDT, SOL, XRP }
-
-    // address[] borrowersList;
-    // address[] lendersList;
     address public owner;
     string[] currencyTypes;
     RNG r = new RNG();
-
-    // mapping(string => uint256) poolAmounts;
-    // mapping(string => uint256) borrowerInterestRates;
-    // mapping(string => uint256) lenderInterestRates;
+    Cro cro = new Cro();
+    Shib shib = new Shib();
+    Uni uni = new Uni();
 
     mapping(uint256 => mapping(address => uint256)) borrowers;
     mapping(uint256 => mapping(address => uint256)) lenders;  
-    // uint256 poolLoanIdCount = 0;
-    // mapping(address => uint256) public borrowers;
-    // mapping(address => uint256) public lenders;
-
-    // mapping(address => string) borrowerCurrencyType;
-    // mapping(address => string) lenderCurrencyType;
-
-    // constructor() public {
-    //     poolAmount = 0;
-    //     borrowerInterestRate = 0;
-    //     lenderInterestRate = 0;
-    // }
 
     struct liquidityPool {
         string currencyType;
@@ -49,8 +35,12 @@ contract LiquidityPool {
     mapping(string => liquidityPool) public pools;
 
     event DepositMade(address lender, string choiceOfCurrency, uint256 depositAmount);
-    event WithdrawalMade(address borrower, string choiceOfCurrency, uint256 withdrawnAmount);
+    event LoanBorrowed(address borrower, string choiceOfCurrency, uint256 borrowAmount);
+    event WithdrawalMade(address lender, string choiceOfCurrency, uint256 withdrawnAmount);
+    event LoanReturned(address borrower, string choiceOfCurrency, uint256 returnAmount);
     event LogOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Transfered(string choiceOfCurrency, uint256 amount);
+    
 
     //modifier to ensure a function is callable only by its owner    
     modifier ownerOnly() {
@@ -71,10 +61,8 @@ contract LiquidityPool {
     // Only owner can create pools
     function addNewPool(
         string memory currencyType
-        // uint256 borrowerInterestRate, // change to API
-        // uint256 lenderInterestRate // change to API
     ) public payable ownerOnly returns(uint256) {
-        // require(numberOfSides > 0);
+        //require(numberOfSides > 0);
         //require((msg.value) > 0.00 ether, "Please deposit a minimum amount to initiate a new currency pool");
         
         //new pool object
@@ -112,6 +100,7 @@ contract LiquidityPool {
     //     return result;
     // }
 
+    //-------------Lender Mentods-----------------------
     function depositToLiquidityPool(string memory choiceOfCurrency, uint256 depositAmount) public {
 
         liquidityPool storage pool = pools[choiceOfCurrency];
@@ -125,6 +114,11 @@ contract LiquidityPool {
         }
         require (isValidCurrency == true, "The Currency is not supported yet!");
         require (depositAmount > 0, "Can't deposit 0 tokens");
+
+        //transfer token to pool
+        //
+
+
         
         // uint256 existingAmount = pool.lenders[msg.sender];
         lenders[poolLoanId][msg.sender] += depositAmount;
@@ -157,6 +151,80 @@ contract LiquidityPool {
         emit WithdrawalMade(msg.sender, choiceOfCurrency, withdrawalAmount);
     }
 
+    //-------------Borrower Mentods-----------------------
+    function borrowFromLiquidityPool(string memory choiceOfCurrency, uint256 amt) public {
+
+        liquidityPool storage pool = pools[choiceOfCurrency];
+        uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
+
+        bool isValidCurrency = false;
+        for (uint i=0; i<currencyTypes.length; i++) {
+            if(keccak256(abi.encodePacked(currencyTypes[i]))==keccak256(abi.encodePacked(choiceOfCurrency))) {
+                isValidCurrency = true;
+            }
+        }
+        require (isValidCurrency == true, "The Currency is not supported yet!");
+        require (amt > 0, "Can't borrow 0 tokens");
+        
+        borrowers[poolLoanId][msg.sender] += amt;
+        pool.poolAmount -= amt;
+
+        emit LoanBorrowed(msg.sender, choiceOfCurrency, amt);
+    }
+
+    function returnToLiquidityPool(string memory choiceOfCurrency, uint256 amt) public {
+
+        liquidityPool storage pool = pools[choiceOfCurrency];
+        uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
+
+        bool isValidCurrency = false;
+        for (uint i=0; i<currencyTypes.length; i++) {
+            if(keccak256(abi.encodePacked(currencyTypes[i]))==keccak256(abi.encodePacked(choiceOfCurrency))) {
+                isValidCurrency = true;
+            }
+        }
+        require (isValidCurrency == true, "The Currency is not supported yet!");
+        require (borrowers[poolLoanId][msg.sender] < amt, "Too many tokens returned");
+
+        borrowers[poolLoanId][msg.sender] = borrowers[poolLoanId][msg.sender] - amt;
+        pool.poolAmount += amt;
+
+        emit LoanReturned(msg.sender, choiceOfCurrency, amt);
+    }
+
+    //-----------Pool Token Transfer Methods-----------------
+    function depositToken(string memory choiceOfCurrency, uint256 amt) public {
+        if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
+            require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+            cro.sendToken(msg.sender, address(this), amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Shib")) ) {
+            require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+            shib.sendToken(msg.sender, address(this), amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Uni")) ) {
+            require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+            uni.sendToken(msg.sender, address(this), amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } 
+    }
+
+    function withdrawToken(string memory choiceOfCurrency, uint256 amt) public {
+        if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
+            require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+            cro.sendToken(address(this), msg.sender, amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Shib")) ) {
+            require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+            shib.sendToken(address(this), msg.sender, amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Uni")) ) {
+            require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+            uni.sendToken(address(this), msg.sender, amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } 
+    }
+
     //----------setter methods-------------
     function setLenderInterestRate(string memory choiceOfCurrency) public {
         // RNG.setRandomNumber(mockInterst);
@@ -177,7 +245,6 @@ contract LiquidityPool {
     function getLenderPoolLoanId(string memory choiceOfCurrency) public view returns (uint256) {
         return pools[choiceOfCurrency].poolLoanId;
     }
-
 
     function getBorrowerLoanAmount(string memory choiceOfCurrency, address borrower) public view returns (uint256) {
         uint256 poolLoanId = getBorrowerPoolLoanId(choiceOfCurrency);
