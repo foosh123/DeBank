@@ -2,6 +2,7 @@ pragma solidity >= 0.5.0;
 // pragma experimental ABIEncoderV2;
 import "./ERC20.sol";
 import "./DSMath.sol";
+import "./RNG.sol";
 
 contract LiquidityPool {
 
@@ -64,9 +65,9 @@ contract LiquidityPool {
 
     // Only owner can create pools
     function addNewPool(
-        string memory currencyType,
-        uint256 borrowerInterestRate, // change to API
-        uint256 lenderInterestRate // change to API
+        string memory currencyType
+        // uint256 borrowerInterestRate, // change to API
+        // uint256 lenderInterestRate // change to API
     ) public payable ownerOnly returns(uint256) {
         // require(numberOfSides > 0);
         //require((msg.value) > 0.00 ether, "Please deposit a minimum amount to initiate a new currency pool");
@@ -75,8 +76,8 @@ contract LiquidityPool {
         liquidityPool memory newLiquidityPool = liquidityPool(
             currencyType,
             msg.value,     
-            borrowerInterestRate,
-            lenderInterestRate,
+            // borrowerInterestRate,
+            // lenderInterestRate,
             msg.sender,  //owner
             address(0) //prev owner
         );
@@ -87,6 +88,10 @@ contract LiquidityPool {
         return numPools;   //return new poolId
     }
 
+    // modifier validLoanId(uint256 loanId) {
+    //     require(loanId < numLoans);
+    //     _;
+    // }
 
     function checkPoolAmount (string memory choiceOfCurrency) public view returns (uint256) {
         return pools[choiceOfCurrency].poolAmount;
@@ -141,6 +146,18 @@ contract LiquidityPool {
         emit WithdrawalMade(msg.sender, choiceOfCurrency, withdrawalAmount);
     }
 
+    //----------setter methods-------------
+    function setLenderInterestRate(string memory choiceOfCurrency, uint8 mockInterst) public {
+        RNG.setRandomNumber(mockInterst);
+        pools[choiceOfCurrency].lenderInterestRate =  RNG.generateRandonNumber();
+    }
+
+    function setBorrowerInterestRate(string memory choiceOfCurrency, uint8 mockInterst) public {
+        RNG.setRandomNumber(mockInterst);
+        pools[choiceOfCurrency].borrowerInterestRate =  RNG.generateRandonNumber();
+    }
+
+    //----------getter methods-------------
     function getBorrowerLoanAmount(string memory choiceOfCurrency, address borrower) public view returns (uint256) {
         return pools[choiceOfCurrency].borrowers[borrower];
     }
@@ -148,6 +165,7 @@ contract LiquidityPool {
     function getLenderLoanAmount(string memory choiceOfCurrency, address lender) public view returns (uint256) {
         return pools[choiceOfCurrency].lenders[lender];
     }
+
 
     function getBorrowerInterestRate(string memory choiceOfCurrency) public view returns (uint256) {
         return pools[choiceOfCurrency].borrowerInterestRate;
@@ -157,10 +175,10 @@ contract LiquidityPool {
         return pools[choiceOfCurrency].lenderInterestRate;
     }
 
-    //transfer ownership to new owner
-    function transfer(uint256 loanId, address newOwner) public ownerOnly(loanId) validLoanId(loanId) {
-        loans[loanId].prevOwner = loans[loanId].owner;
-        loans[loanId].owner = newOwner;
-    }
+    //transfer ???
+    // function transfer(address newOwner, ) public ownerOnly(loanId) validLoanId(loanId) {
+    //     loans[loanId].prevOwner = loans[loanId].owner;
+    //     loans[loanId].owner = newOwner;
+    // }
 
 }
