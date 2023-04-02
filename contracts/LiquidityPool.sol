@@ -12,6 +12,7 @@ contract LiquidityPool {
     // address[] lendersList;
     address public owner;
     string[] currencyTypes;
+    RNG r = new RNG();
 
     // mapping(string => uint256) poolAmounts;
     // mapping(string => uint256) borrowerInterestRates;
@@ -147,14 +148,15 @@ contract LiquidityPool {
     }
 
     //----------setter methods-------------
-    function setLenderInterestRate(string memory choiceOfCurrency, uint8 mockInterst) public {
-        RNG.setRandomNumber(mockInterst);
-        pools[choiceOfCurrency].lenderInterestRate =  RNG.generateRandonNumber();
+    function setLenderInterestRate(string memory choiceOfCurrency) public {
+        // RNG.setRandomNumber(mockInterst);
+        
+        pools[choiceOfCurrency].lenderInterestRate =  r.generateRandonNumber();
     }
 
-    function setBorrowerInterestRate(string memory choiceOfCurrency, uint8 mockInterst) public {
-        RNG.setRandomNumber(mockInterst);
-        pools[choiceOfCurrency].borrowerInterestRate =  RNG.generateRandonNumber();
+    function setBorrowerInterestRate(string memory choiceOfCurrency) public {
+        // RNG.setRandomNumber(mockInterst);
+        pools[choiceOfCurrency].borrowerInterestRate =  r.generateRandonNumber();
     }
 
     //----------getter methods-------------
