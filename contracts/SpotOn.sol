@@ -1,11 +1,20 @@
 pragma solidity >= 0.5.0;
 
 import "./SpotOnContract.sol";
+import "./RNG.sol";
+import "./Cro.sol";
+import "./Shib.sol";
+import "./Uni.sol";
 
 contract SpotOn {
 
     SpotOnContract spot_on_contract;
     address owner;
+    string[] currencyTypes;
+    RNG r = new RNG();
+    Cro cro = new Cro();
+    Shib shib = new Shib();
+    Uni uni = new Uni();
 
     constructor() public {
         // credit
@@ -15,9 +24,10 @@ contract SpotOn {
     event loanRequested (uint256 spotOnId);
     event loanOffered (uint256 spotOnId);
     event loanTaken (uint256 spotOnId);
+    event Transferred(string currencyType, uint amount);
 
 
-    mapping(uint256 => SpotOnContract) public spotOnInContract;  // tracks all loans that have been accepted, to check loanPeriod is valid
+    mapping(uint256 => SpotOnContract) public spotOnContracts;  // tracks all loans that have been accepted, to check loanPeriod is valid
     uint256 public numOfLoans = 0;
 
     function requestLoan(
@@ -49,9 +59,29 @@ contract SpotOn {
             spot_on_contract.setLender(spotOnId, msg.sender);
         }
 
-        //handling transaction of money
+        //handling collateral
+        string memory currencyType = spot_on_contract.getCurrencyType(spotOnId);
+        uint256 collateralAmount = spot_on_contract.getCollateralAmount(spotOnId);
+        depositCollateralToSpotOnContract(currencyType, collateralAmount, spotOnId);
 
-        
+        //lender send to borrower
+        address borrower = spot_on_contract.getSpotOnBorrower(spotOnId);
+        address lender = spot_on_contract.getSpotOnLender(spotOnId);
+        uint amount = spot_on_contract.getAmount(spotOnId);
+        if(keccak256(abi.encodePacked(currencyType))==keccak256(abi.encodePacked("Cro")) ) {
+            require(cro.checkBalance() >= amount, "You dont have enough token to deposit");
+            cro.sendToken(lender, borrower, amount);
+            emit Transferred(currencyType, amount);
+        } else if(keccak256(abi.encodePacked(currencyType))==keccak256(abi.encodePacked("Shib")) ) {
+            require(shib.checkBalance() >= amount, "You dont have enough token to deposit");
+            shib.sendToken(lender, borrower, amount);
+            emit Transferred(currencyType, amount);
+        } else if(keccak256(abi.encodePacked(currencyType))==keccak256(abi.encodePacked("Uni")) ) {
+            require(uni.checkBalance() >= amount, "You dont have enough token to deposit");
+            uni.sendToken(lender, borrower, amount);
+            emit Transferred(currencyType, amount);
+        } 
+
         emit loanTaken(spotOnId);
     }
 
@@ -73,4 +103,38 @@ contract SpotOn {
     }
 
 
+    modifier isValidCurrency(string memory currencyType) {
+        bool isValid = false;
+        for (uint i=0; i < currencyTypes.length; i++) {
+            if(keccak256(abi.encodePacked(currencyTypes[i]))==keccak256(abi.encodePacked(currencyType))) {
+                isValid = true;
+            }
+        }
+        require (isValid == true, "The Currency is not supported yet!");
+        _;
+    }
+
+    
+    function depositCollateralToSpotOnContract(string memory currencyType, uint256 amount, uint256 spotOnContractId) public payable isValidCurrency(currencyType) {
+        require (amount > 0, "Can't deposit 0 tokens");
+        
+        //checks sender is the borrower
+        require (msg.sender == spot_on_contract.getSpotOnBorrower(spotOnContractId));
+
+        //transfer the token
+        if(keccak256(abi.encodePacked(currencyType))==keccak256(abi.encodePacked("Cro")) ) {
+            require(cro.checkBalance() >= amount, "You dont have enough token to deposit");
+            cro.sendToken(msg.sender, address(this), amount);
+            emit Transferred(currencyType, amount);
+        } else if(keccak256(abi.encodePacked(currencyType))==keccak256(abi.encodePacked("Shib")) ) {
+            require(shib.checkBalance() >= amount, "You dont have enough token to deposit");
+            shib.sendToken(msg.sender, address(this), amount);
+            emit Transferred(currencyType, amount);
+        } else if(keccak256(abi.encodePacked(currencyType))==keccak256(abi.encodePacked("Uni")) ) {
+            require(uni.checkBalance() >= amount, "You dont have enough token to deposit");
+            uni.sendToken(msg.sender, address(this), amount);
+            emit Transferred(currencyType, amount);
+        } 
+        
+    }
 }

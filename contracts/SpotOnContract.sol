@@ -2,6 +2,8 @@ pragma solidity >= 0.5.0;
 
 
 contract SpotOnContract {
+    string[] currencyTypes;
+    
 
     struct spotOnContract {
         uint256 spotOnContractId;
@@ -30,6 +32,18 @@ contract SpotOnContract {
 
     function getTimeStamp() public view returns(uint) {
         return block.timestamp;
+    }
+
+    function getCurrencyType(uint256 spotOnContractId) public view returns(string memory) {
+        return spotOnContracts[spotOnContractId].currency;
+    }
+
+    function getCollateralAmount(uint256 spotOnContractId) public view returns(uint256) {
+        return spotOnContracts[spotOnContractId].collateral;
+    }
+
+    function getAmount(uint256 spotOnContractId) public view returns(uint256) {
+        return spotOnContracts[spotOnContractId].amount;
     }
 
     function createContract(
@@ -66,5 +80,7 @@ contract SpotOnContract {
     function setLender(uint256 spotOnId, address lenderAddress) public {
         spotOnContracts[spotOnId].lender = lenderAddress;
     }
+
+
 
 }
