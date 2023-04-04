@@ -16,8 +16,7 @@ contract Shib {
     }
 
     //1 SHIB = 0.0001 ETH
-    function getToken() public payable {
-        uint256 amt = msg.value/100000000000000;
+    function getToken(uint256 amt) public payable {
         require(erc20Contract.totalSupply() + amt < supplyLimt, "SHIB supply is not enough");
         erc20Contract.mint(msg.sender, amt);
     }

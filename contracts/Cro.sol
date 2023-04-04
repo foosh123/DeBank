@@ -16,8 +16,7 @@ contract Cro {
     }
 
     //1CRO = 0.01ETH
-    function getToken() public payable {
-        uint256 amt = msg.value/10000000000000000;
+    function getToken(uint256 amt) public payable {
         require(erc20Contract.totalSupply() + amt < supplyLimt, "CRO supply is not enough");
         erc20Contract.mint(msg.sender, amt);
     }

@@ -16,8 +16,7 @@ contract Uni {
     }
 
     //1 UNI = 0.1ETH
-    function getToken() public payable {
-        uint256 amt = msg.value/100000000000000000;
+    function getToken(uint256 amt) public payable {
         require(erc20Contract.totalSupply() + amt < supplyLimt, "UNI supply is not enough");
         erc20Contract.mint(msg.sender, amt);
     }
