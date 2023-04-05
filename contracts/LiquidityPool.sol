@@ -48,6 +48,17 @@ contract LiquidityPool {
         _;
     }
 
+    modifier isValidCurrency(string memory currencyType) {
+        bool isValid = false;
+        for (uint i=0; i < currencyTypes.length; i++) {
+            if(keccak256(abi.encodePacked(currencyTypes[i]))==keccak256(abi.encodePacked(currencyType))) {
+                isValid = true;
+            }
+        }
+        require (isValid == true, "The Currency is not supported yet!");
+        _;
+    }
+
     function Owned() public {
         owner = msg.sender;
     }
@@ -101,25 +112,16 @@ contract LiquidityPool {
     // }
 
     //-------------Lender Mentods-----------------------
-    function depositToLiquidityPool(string memory choiceOfCurrency, uint256 depositAmount) public {
+    function depositToLiquidityPool(string memory choiceOfCurrency, uint256 depositAmount) public isValidCurrency(choiceOfCurrency) {
 
         liquidityPool storage pool = pools[choiceOfCurrency];
         uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
 
-        bool isValidCurrency = false;
-        for (uint i=0; i<currencyTypes.length; i++) {
-            if(keccak256(abi.encodePacked(currencyTypes[i]))==keccak256(abi.encodePacked(choiceOfCurrency))) {
-                isValidCurrency = true;
-            }
-        }
-        require (isValidCurrency == true, "The Currency is not supported yet!");
         require (depositAmount > 0, "Can't deposit 0 tokens");
 
         //transfer token to pool
-        //
+        depositToken(choiceOfCurrency, depositAmount);
 
-
-        
         // uint256 existingAmount = pool.lenders[msg.sender];
         lenders[poolLoanId][msg.sender] += depositAmount;
         // pool.lenders[msg.sender] += depositAmount;
@@ -131,19 +133,15 @@ contract LiquidityPool {
         emit DepositMade(msg.sender, choiceOfCurrency, depositAmount);
     }
 
-    function withdrawFromLiquidityPool(string memory choiceOfCurrency, uint256 withdrawalAmount) public {
+    function withdrawFromLiquidityPool(string memory choiceOfCurrency, uint256 withdrawalAmount) public isValidCurrency(choiceOfCurrency) {
 
         liquidityPool storage pool = pools[choiceOfCurrency];
         uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
 
-        bool isValidCurrency = false;
-        for (uint i=0; i<currencyTypes.length; i++) {
-            if(keccak256(abi.encodePacked(currencyTypes[i]))==keccak256(abi.encodePacked(choiceOfCurrency))) {
-                isValidCurrency = true;
-            }
-        }
-        require (isValidCurrency == true, "The Currency is not supported yet!");
         require (lenders[poolLoanId][msg.sender] >= withdrawalAmount, "Not enough tokens to withdraw");
+
+        //transfer token to pool
+        withdrawToken(choiceOfCurrency, withdrawalAmount);
 
         lenders[poolLoanId][msg.sender] = lenders[poolLoanId][msg.sender] - withdrawalAmount;
         pool.poolAmount -= withdrawalAmount;
@@ -152,39 +150,31 @@ contract LiquidityPool {
     }
 
     //-------------Borrower Mentods-----------------------
-    function borrowFromLiquidityPool(string memory choiceOfCurrency, uint256 amt) public {
+    function borrowFromLiquidityPool(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
 
         liquidityPool storage pool = pools[choiceOfCurrency];
         uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
 
-        bool isValidCurrency = false;
-        for (uint i=0; i<currencyTypes.length; i++) {
-            if(keccak256(abi.encodePacked(currencyTypes[i]))==keccak256(abi.encodePacked(choiceOfCurrency))) {
-                isValidCurrency = true;
-            }
-        }
-        require (isValidCurrency == true, "The Currency is not supported yet!");
         require (amt > 0, "Can't borrow 0 tokens");
         
+        //transfer token to pool
+        withdrawToken(choiceOfCurrency, amt);
+
         borrowers[poolLoanId][msg.sender] += amt;
         pool.poolAmount -= amt;
 
         emit LoanBorrowed(msg.sender, choiceOfCurrency, amt);
     }
 
-    function returnToLiquidityPool(string memory choiceOfCurrency, uint256 amt) public {
+    function returnToLiquidityPool(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
 
         liquidityPool storage pool = pools[choiceOfCurrency];
         uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
 
-        bool isValidCurrency = false;
-        for (uint i=0; i<currencyTypes.length; i++) {
-            if(keccak256(abi.encodePacked(currencyTypes[i]))==keccak256(abi.encodePacked(choiceOfCurrency))) {
-                isValidCurrency = true;
-            }
-        }
-        require (isValidCurrency == true, "The Currency is not supported yet!");
         require (borrowers[poolLoanId][msg.sender] < amt, "Too many tokens returned");
+
+        //transfer token to pool
+        depositToken(choiceOfCurrency, amt);
 
         borrowers[poolLoanId][msg.sender] = borrowers[poolLoanId][msg.sender] - amt;
         pool.poolAmount += amt;
@@ -193,7 +183,7 @@ contract LiquidityPool {
     }
 
     //-----------Pool Token Transfer Methods-----------------
-    function depositToken(string memory choiceOfCurrency, uint256 amt) public {
+    function depositToken(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
             require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
             cro.sendToken(msg.sender, address(this), amt);
@@ -209,7 +199,7 @@ contract LiquidityPool {
         } 
     }
 
-    function withdrawToken(string memory choiceOfCurrency, uint256 amt) public {
+    function withdrawToken(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
             require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
             cro.sendToken(address(this), msg.sender, amt);
@@ -226,13 +216,13 @@ contract LiquidityPool {
     }
 
     //----------setter methods-------------
-    function setLenderInterestRate(string memory choiceOfCurrency) public {
+    function setLenderInterestRate(string memory choiceOfCurrency) public isValidCurrency(choiceOfCurrency) {
         // RNG.setRandomNumber(mockInterst);
         
         pools[choiceOfCurrency].lenderInterestRate =  r.generateRandonNumber();
     }
 
-    function setBorrowerInterestRate(string memory choiceOfCurrency) public {
+    function setBorrowerInterestRate(string memory choiceOfCurrency) public isValidCurrency(choiceOfCurrency) {
         // RNG.setRandomNumber(mockInterst);
         pools[choiceOfCurrency].borrowerInterestRate =  r.generateRandonNumber();
     }
