@@ -118,7 +118,7 @@ contract LiquidityPool {
                 break;
             }
         }
-        if (isEmpty == true) {
+        if (isEmpty) {
             // lenderList.push(msg.sender);
             delete lenderList[msg.sender];
         }
@@ -202,6 +202,18 @@ contract LiquidityPool {
 
         // Return amount to total pool
         pools[choiceOfCurrency].poolAmount += amount;
+
+        // Check if all currency balance empty, True -> Remove user
+        bool isEmpty = true;
+        for (int i = 0; i < currencyTypes.length; i++) {
+            if (borrowedAmounts[msg.sender][i] == 0) {
+                isEmpty = false;
+                break;
+            }
+        }
+        if (isEmpty) {
+            delete borrowerList[msg.sender];
+        }
     }
 
     //--------------Helper Methods----------------
