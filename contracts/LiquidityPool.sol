@@ -56,10 +56,10 @@ contract LiquidityPool {
 
     // Function to deposit funds
     function deposit(uint256 choiceOfCurrency, uint256 depositAmount) public {// isValidCurrency(choiceOfCurrency) 
-        require(msg.value > 0, "Deposit amount must be greater than 0");
+        require(depositAmount > 0, "Deposit amount must be greater than 0");
         
         // update lenders
-        if (isUserExists(msg.sender) == false) {
+        if (doesLenderExist(msg.sender) == false) {
             lenderList.push(msg.sender);
         }
 
@@ -77,22 +77,31 @@ contract LiquidityPool {
     }
 
     // Function to withdraw funds
-    function withdraw(uint256 amount, uint256 currencyType) public {
+    function withdraw(uint256 amount, uint256 choiceOfCurrency) public {
         require(amount > 0, "Withdrawal amount must be greater than 0");
-        require(balances[msg.sender][currencyType] >= amount, "Insufficient balance");
-        balances[msg.sender][currencyType] -= amount;
+        require(balances[msg.sender][choiceOfCurrency] >= amount, "Insufficient balance");
+        balances[msg.sender][choiceOfCurrency] -= amount;
+
+        uint256 withdrawnAmount = amount;
+
         // Update the deposit amount for the specified currency
         for (uint i = 0; i < deposits[msg.sender].length; i++) {
-            if (deposits[msg.sender][i].currencyType == currencyType) {
-                if (deposits[msg.sender][i].amount >= amount) {
-                    deposits[msg.sender][i].amount -= amount;
+            if (deposits[msg.sender][i].currencyType == choiceOfCurrency) {
+                if (deposits[msg.sender][i].amount >= withdrawnAmount) {
+                    deposits[msg.sender][i].amount -= withdrawnAmount;
                     break;
                 } else {
-                    amount -= deposits[msg.sender][i].amount;
+                    withdrawnAmount -= deposits[msg.sender][i].amount;
                     deposits[msg.sender][i].amount = 0;
                 }
             }
         }
+
+        // transfer the token
+        withdrawToken(choiceOfCurrency, amount);
+
+        // Return amount to total pool
+        pools[choiceOfCurrency].poolAmount -= amount;
     }
 
     // Function to calculate interest earned on a user's balance for a specified currency
@@ -123,16 +132,79 @@ contract LiquidityPool {
         return count;
     }
 
+    // Function to borrow funds
+    function borrow(uint256 loanAmount, uint256 choiceOfCurrency) public {
+        require(loanAmount > 0, "Loan amount must be greater than 0");
 
-    //--------------Helper Methods----------------
-    function isUserExists (address user) private returns (bool) {
-        bool isLenderExists = false;
-        for (int i = 0; i < user.length; i++) {
-            if(user[i] == msg.sender) {
-                isLenderExists = true;
+        // update borrowers
+        if (doesBorrowerExist(msg.sender) == false) {
+            borrowerList.push(msg.sender);
+        }
+
+        // Create a new loan struct and add it to the loans mapping for this user
+        Loan memory loan = Loan(loanAmount, block.timestamp, getBorrowerInterestRate(choiceOfCurrency), choiceOfCurrency);
+        loans[msg.sender].push(loan);
+
+        // transfer the token
+        borrowToken(choiceOfCurrency, loanAmount);
+
+        // Add the loan amount to the user's borrowedAmounts for the specified currency
+        borrowedAmounts[msg.sender][choiceOfCurrency] += loanAmount;
+        // Remove loan amount from total pool
+        pools[choiceOfCurrency].poolAmount -= loanAmount;
+    }
+
+    // Function to return borrowed funds
+    function returnFunds(uint256 amount, uint256 choiceOfCurrency) public {
+        require(amount > 0, "Funds returned must be greater than 0");
+        require(borrowedAmounts[msg.sender][choiceOfCurrency] <= amount, "Excessive funds returned");
+
+        // Remove the returned amount from the user's borrowedAmounts for the specified currency
+        borrowedAmounts[msg.sender][choiceOfCurrency] -= amount;
+
+        uint256 returnedAmount = amount;
+        
+        // Update the loan amount for the specified currency
+        for (uint i = 0; i < loans[msg.sender].length; i++) {
+            if (loans[msg.sender][i].currencyType == choiceOfCurrency) {
+                if (loans[msg.sender][i].amount >= returnedAmount) {
+                    loans[msg.sender][i].amount -= returnedAmount;
+                    break;
+                } else {
+                    returnedAmount -= loans[msg.sender][i].amount;
+                    loans[msg.sender][i].amount = 0;
+                }
             }
         }
-        return isLenderExists;
+
+        // transfer the token
+        returnToken(choiceOfCurrency, amount);
+
+        // Return amount to total pool
+        pools[choiceOfCurrency].poolAmount += amount;
+    }
+
+    //--------------Helper Methods----------------
+    // Function to check if lender exists
+    function doesLenderExist (address lender) private returns (bool) {
+        bool lenderExists = false;
+        for (int i = 0; i < lenderList.length; i++) {
+            if(lenderList[i] == lender) {
+                lenderExists = true;
+            }
+        }
+        return lenderExists;
+    }
+
+    // Function to check if borrower exists
+    function doesBorrowerExist (address borrower) private returns (bool) {
+        bool borrowerExists = false;
+        for (int i = 0; i < borrowerList.length; i++) {
+            if(borrowerList[i] == borrower) {
+                borrowerExists = true;
+            }
+        }
+        return borrowerExists;
     }
 
     //===========================Old code, can refer!!! ==================================================
@@ -318,6 +390,64 @@ contract LiquidityPool {
     }
 
     function withdrawToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
+        if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
+            require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+            cro.sendToken(address(this), msg.sender, amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } else if(choiceOfCurrency == 1) {
+            require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+            shib.sendToken(address(this), msg.sender, amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } else if(choiceOfCurrency == 2) {
+            require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+            uni.sendToken(address(this), msg.sender, amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } 
+        // if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
+        //     require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+        //     cro.sendToken(address(this), msg.sender, amt);
+        //     emit Transfered(choiceOfCurrency, amt);
+        // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Shib")) ) {
+        //     require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+        //     shib.sendToken(address(this), msg.sender, amt);
+        //     emit Transfered(choiceOfCurrency, amt);
+        // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Uni")) ) {
+        //     require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+        //     uni.sendToken(address(this), msg.sender, amt);
+        //     emit Transfered(choiceOfCurrency, amt);
+        // } 
+    }
+
+    function borrowToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
+        if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
+            require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+            cro.sendToken(address(this), msg.sender, amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } else if(choiceOfCurrency == 1) {
+            require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+            shib.sendToken(address(this), msg.sender, amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } else if(choiceOfCurrency == 2) {
+            require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+            uni.sendToken(address(this), msg.sender, amt);
+            emit Transfered(choiceOfCurrency, amt);
+        } 
+        // if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
+        //     require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+        //     cro.sendToken(address(this), msg.sender, amt);
+        //     emit Transfered(choiceOfCurrency, amt);
+        // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Shib")) ) {
+        //     require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+        //     shib.sendToken(address(this), msg.sender, amt);
+        //     emit Transfered(choiceOfCurrency, amt);
+        // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Uni")) ) {
+        //     require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+        //     uni.sendToken(address(this), msg.sender, amt);
+        //     emit Transfered(choiceOfCurrency, amt);
+        // } 
+    }
+
+    function returnToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
             require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
             cro.sendToken(address(this), msg.sender, amt);
