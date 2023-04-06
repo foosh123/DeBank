@@ -423,15 +423,15 @@ contract LiquidityPool {
 
     function withdrawToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
-            require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(cro.checkBalance() >= amt, "Insufficient tokens in pool to withdraw");
             cro.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
-            require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(shib.checkBalance() >= amt, "Insufficient tokens in pool to withdraw");
             shib.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
-            require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(uni.checkBalance() >= amt, "Insufficient tokens in pool to withdraw");
             uni.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } 
@@ -452,15 +452,15 @@ contract LiquidityPool {
 
     function borrowToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
-            require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(cro.checkBalance() >= amt, "Insufficient tokens in pool to borrow");
             cro.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
-            require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(shib.checkBalance() >= amt, "Insufficient tokens in pool to borrow");
             shib.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
-            require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(uni.checkBalance() >= amt, "Insufficient tokens in pool to borrow");
             uni.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } 
@@ -481,29 +481,29 @@ contract LiquidityPool {
 
     function returnToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
-            require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
-            cro.sendToken(address(this), msg.sender, amt);
+            require(cro.checkBalance() >= amt, "You dont have enough token to return");
+            cro.sendToken(msg.sender, address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
-            require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
-            shib.sendToken(address(this), msg.sender, amt);
+            require(shib.checkBalance() >= amt, "You dont have enough token to return");
+            shib.sendToken(msg.sender, address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
-            require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
-            uni.sendToken(address(this), msg.sender, amt);
+            require(uni.checkBalance() >= amt, "You dont have enough token to return");
+            uni.sendToken(msg.sender, address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } 
-        // if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
+        // if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) { //choiceOfCurrency == 0 
         //     require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
-        //     cro.sendToken(address(this), msg.sender, amt);
+        //     cro.sendToken(msg.sender, address(this), amt);
         //     emit Transfered(choiceOfCurrency, amt);
         // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Shib")) ) {
         //     require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
-        //     shib.sendToken(address(this), msg.sender, amt);
+        //     shib.sendToken(msg.sender, address(this), amt);
         //     emit Transfered(choiceOfCurrency, amt);
         // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Uni")) ) {
         //     require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
-        //     uni.sendToken(address(this), msg.sender, amt);
+        //     uni.sendToken(msg.sender, address(this), amt);
         //     emit Transfered(choiceOfCurrency, amt);
         // } 
     }
