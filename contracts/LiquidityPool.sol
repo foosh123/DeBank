@@ -81,6 +81,8 @@ contract LiquidityPool {
         balances[msg.sender][choiceOfCurrency] += depositAmount;
         // Add the deposited amount to total pool
         pools[choiceOfCurrency].poolAmount += depositAmount;
+
+        emit DepositMade(msg.sender, choiceOfCurrency, depositAmount);
     }
 
     // Function to withdraw funds
@@ -122,6 +124,8 @@ contract LiquidityPool {
             // lenderList.push(msg.sender);
             delete lenderList[msg.sender];
         }
+
+        emit WithdrawalMade(msg.sender, choiceOfCurrency, amount);
     }
 
     // Function to calculate interest earned on a user's balance for a specified currency
@@ -172,6 +176,8 @@ contract LiquidityPool {
         borrowedAmounts[msg.sender][choiceOfCurrency] += loanAmount;
         // Remove loan amount from total pool
         pools[choiceOfCurrency].poolAmount -= loanAmount;
+
+        emit LoanBorrowed(msg.sender, choiceOfCurrency, loanAmount);
     }
 
     // Function to return borrowed funds
@@ -214,6 +220,8 @@ contract LiquidityPool {
         if (isEmpty) {
             delete borrowerList[msg.sender];
         }
+
+        emit LoanReturned(msg.sender, choiceOfCurrency, amount);
     }
 
     //--------------Helper Methods----------------
@@ -244,9 +252,9 @@ contract LiquidityPool {
     mapping(uint256 => liquidityPool) public pools;
 
     event DepositMade(address lender, uint256 choiceOfCurrency, uint256 depositAmount);
-    event LoanBorrowed(address borrower, uint256 choiceOfCurrency, uint256 borrowAmount);
+    event LoanBorrowed(address borrower, uint256 choiceOfCurrency, uint256 loanAmount);
     event WithdrawalMade(address lender, uint256 choiceOfCurrency, uint256 withdrawnAmount);
-    event LoanReturned(address borrower, uint256 choiceOfCurrency, uint256 returnAmount);
+    event LoanReturned(address borrower, uint256 choiceOfCurrency, uint256 returnedAmount);
     event LogOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Transfered(string choiceOfCurrency, uint256 amount);
     
