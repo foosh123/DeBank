@@ -49,10 +49,17 @@ contract LiquidityPool {
         uint256 poolLoanId;      
     }
 
+    struct Collateral {
+        uint256 currencyType;
+        uint256 collateralCurrencyType; // what type the collateral is for
+        uint256 amount;
+    }
+
     mapping(address => Deposit[]) deposits;
     mapping(address => Loan[]) loans;
     mapping(address => mapping(uint256 => uint256)) balances; //userAddress => (currencyType => amount)
     mapping(address => mapping(uint256 => uint256)) borrowedAmounts; //userAddress => (currencyType => amount)
+    mapping(address => Collateral[]) collateralAmounts; //userAddress => (currencyType => amount)
 
     // Function to deposit funds
     function deposit(uint256 choiceOfCurrency, uint256 depositAmount) public {// isValidCurrency(choiceOfCurrency) 
