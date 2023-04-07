@@ -218,14 +218,7 @@ contract LiquidityPool {
         // a. check how much colleteral needed based on currency type
         uint256 collateralAmountRequired = {} * 1.5;
         // b. check if got enuf of that amt 
-        uint256 collateral = 0;
-        for (int i = 0; i <= collateralAmounts[msg.sender].length; i++) {
-            if (collateralAmounts[msg.sender][i].currencyType == collateralCurrency 
-                && collateralAmounts[msg.sender][i].collateralCurrencyType == choiceOfCurrency) 
-                {
-                    collateral = collateralAmounts[msg.sender][i].amount;
-                }
-        }
+        uint256 collateral = getBorrowerCollateral(collateralCurrency, choiceOfCurrency);
         require(collateralAmountRequired <= collateral, "Insufficient collateral to borrow");
 
         // update borrowers
@@ -293,9 +286,21 @@ contract LiquidityPool {
         emit LoanReturned(msg.sender, choiceOfCurrency, amount);
     }
 
+    function getBorrowerCollateral (uint256 collateralCurrency, uint256 choiceOfCurrency) public view returns (uint256) {
+        uint256 collateral = 0;
+        for (int i = 0; i <= collateralAmounts[msg.sender].length; i++) {
+            if (collateralAmounts[msg.sender][i].currencyType == collateralCurrency 
+                && collateralAmounts[msg.sender][i].collateralCurrencyType == choiceOfCurrency) 
+                {
+                    collateral = collateralAmounts[msg.sender][i].amount;
+                }
+        }
+        return collateral;
+    }
+
     // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
     // Function to calculate the interest owed on a user's loan for a specified currency
-    function calculateLoanInterest(uint256 interestRate) public view returns (uint256) {
+    function calculateLoanInterest(uint256 interestRate) public {
         for (uint i = 0; i < borrowerList.length; i++) {
             for (uint j = 0; j < numPools; j++) {
                 uint256 totalLoanAmount = borrowedAmounts[i][j];
@@ -311,7 +316,12 @@ contract LiquidityPool {
         }
 
         // [Margin Call] 1.2: gives warning
-        // [Margin Call] 1.05: liquidate
+        if () {
+
+        } else if () { // [Margin Call] 1.05: liquidate
+
+        }
+        
     }
 
     // Function to liquidate collateral when value ratio falls below trashhold
