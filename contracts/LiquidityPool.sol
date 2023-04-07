@@ -214,15 +214,13 @@ contract LiquidityPool {
     function borrow(uint256 loanAmount, uint256 choiceOfCurrency) public {
         require(loanAmount > 0, "Loan amount must be greater than 0");
 
-        //indicate what type currency u wanna use as collateral
-
         // a. check how much colleteral needed based on currency type
         // b. check if got enuf of that amt 
         Collateral memory collateral = getBorrowerCollateral(choiceOfCurrency);
         uint256 collateralAmount = collateral.amount;
         uint256 collateralCurrency = collateral.collateralCurrencyType;
 
-        require(returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.5, "Insufficient collateral to borrow");
+        require(returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) >= 1.5, "Insufficient collateral to borrow");
 
         // update borrowers
         if (doesBorrowerExist(msg.sender) == false) {
@@ -286,10 +284,15 @@ contract LiquidityPool {
             removeUserFromUserList(borrowerList, msg.sender);
         }
 
+        // !!!!!!!!!!!!! ADD IN !!!!!!!!!!!!!!!
+        // Return Funds
+            //  a. need to return collateral per ratio
+            //  b. if all loan is cleared, must remove the Collateral instance from the collateralAmount array (use pop)
+
         emit LoanReturned(msg.sender, choiceOfCurrency, amount);
     }
 
-    function getBorrowerCollateral (uint256 choiceOfCurrency) public view returns (Collateral memory collateral) {
+    function getBorrowerCollateral (uint256 choiceOfCurrency) public view returns (Collateral memory) {
         Collateral memory collateral;
         for (int i = 0; i <= collateralAmounts[msg.sender].length; i++) {
             if (collateralAmounts[msg.sender][i].collateralCurrencyType == choiceOfCurrency) 
@@ -298,6 +301,26 @@ contract LiquidityPool {
                 }
         }
         return collateral;
+    }
+
+    // !!!!!!!!!! NEED TO ADD IN !!!!!!!!!!!!!!!!!!!!!!!!
+    function depositCollateral (uint256 currencyType, uint256 currencyFor, uint256 amount) public {
+        //check if borrowing currency has collateral ctype 
+        // Yes 
+            // check if == currencyType
+                // Yes: put in
+                // No: error
+        // No
+            // add in new Collateral
+            // add in amount
+        
+        for (uint256 i = 0; i < collateralAmounts[msg.sender].length; i++) {
+            if (collateralAmounts[msg.sender][i].currencyType) {
+
+            }
+        }
+        Collateral c = new Collateral();
+        collateralAmounts[msg.sender] = c;
     }
 
     // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
