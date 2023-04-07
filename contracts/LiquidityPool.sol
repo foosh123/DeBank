@@ -314,7 +314,7 @@ contract LiquidityPool {
         return collateral;
     }
 
-    // !!!!!!!!!! NEED TO ADD IN !!!!!!!!!!!!!!!!!!!!!!!!
+    // Function to deposit collateral
     function depositCollateral (uint256 currencyType, uint256 currencyFor, uint256 amount) public {
         //check if borrowing currency has collateral ctype 
         // Yes 
@@ -345,7 +345,6 @@ contract LiquidityPool {
         }
     }
 
-    // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
     // Function to calculate the interest owed on a user's loan for a specified currency
     function calculateLoanInterest(uint256 interestRate) public {
         for (uint i = 0; i < borrowerList.length; i++) {
@@ -375,6 +374,7 @@ contract LiquidityPool {
         
     }
 
+    // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
     // Function to liquidate collateral when value ratio falls below trashhold
     function liquidateCollateral() private {
         // [Margin call] If < x1.05, liquidate (move the amount to the pool), and borrowers can keep the loan amount
