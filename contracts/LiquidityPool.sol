@@ -325,13 +325,24 @@ contract LiquidityPool {
             // add in new Collateral
             // add in amount
         
+        bool hasCollateral = false;
+        Collateral memory c;
         for (uint256 i = 0; i < collateralAmounts[msg.sender].length; i++) {
-            if (collateralAmounts[msg.sender][i].currencyType) {
-
+            if (collateralAmounts[msg.sender][i].collateralCurrencyType == currencyFor) {
+                require (collateralAmounts[msg.sender][i].currencyType == currencyType, "Invalid Collateral Currency Type");
+                hasCollateral = true;
+                c = collateralAmounts[msg.sender][i];
             }
         }
-        Collateral c = new Collateral();
-        collateralAmounts[msg.sender] = c;
+        if (hasCollateral) {
+            c.amount += amount;
+        } else {
+            c = new Collateral();
+            c.currencyType = currencyType;
+            c.collateralCurrencyType = currencyFor;
+            c.amount = amount;
+            collateralAmounts[msg.sender][currencyFor] = c;
+        }
     }
 
     // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
