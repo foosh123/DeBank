@@ -210,13 +210,23 @@ contract LiquidityPool {
     }
 
     // Function to borrow funds
-    function borrow(uint256 loanAmount, uint256 choiceOfCurrency, +++) public {
+    function borrow(uint256 loanAmount, uint256 choiceOfCurrency, uint256 collateralCurrency) public {
         require(loanAmount > 0, "Loan amount must be greater than 0");
 
         //indicate what type currency u wanna use as collateral
 
         // a. check how much colleteral needed based on currency type
+        uint256 collateralAmountRequired = {} * 1.5;
         // b. check if got enuf of that amt 
+        uint256 collateral = 0;
+        for (int i = 0; i <= collateralAmounts[msg.sender].length; i++) {
+            if (collateralAmounts[msg.sender][i].currencyType == collateralCurrency 
+                && collateralAmounts[msg.sender][i].collateralCurrencyType == choiceOfCurrency) 
+                {
+                    collateral = collateralAmounts[msg.sender][i].amount;
+                }
+        }
+        require(collateralAmountRequired <= collateral, "Insufficient collateral to borrow");
 
         // update borrowers
         if (doesBorrowerExist(msg.sender) == false) {
@@ -295,6 +305,25 @@ contract LiquidityPool {
             interest += (totalLoanAmount * loans[user][getLoanCount(user, currencyType) - 1].interestRate * monthsElapsed) / 100;
         }
         return interest;
+
+        // [Margin Call] 1.2: gives warning
+        // [Margin Call] 1.05: liquidate
+    }
+
+    function calculateLoanInterest(uint256 interestRate) public view returns (uint256) {
+        for (uint i = 0; i < borrowerList.length; i++) {
+            for (uint j = 0; j < numPools; j++) {
+                uint256 totalLoanAmount = borrowedAmounts[i][j];
+                uint256 interest = 0;
+                if (totalLoanAmount > 0) {
+                    uint256 timeElapsed = block.timestamp - loans[borrowerList[i]][getLoanCount(borrowerList[i], j) - 1].time;
+                    uint256 secondsInMonth = 2592000; // assuming 30 days in a month
+                    uint256 monthsElapsed = timeElapsed / secondsInMonth;
+                    interest += (totalLoanAmount * interestRate * monthsElapsed) / 100;
+                }
+                borrow(j, interest);
+            }
+        }
 
         // [Margin Call] 1.2: gives warning
         // [Margin Call] 1.05: liquidate
