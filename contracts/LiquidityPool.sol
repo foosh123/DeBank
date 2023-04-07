@@ -10,7 +10,7 @@ import "./Uni.sol";
 contract LiquidityPool {
 
     address public owner;
-    string[] currencyTypes;
+    uint256[] currencyTypes;
     address[] borrowerList;
     address[] lenderList;
     RNG r = new RNG();
@@ -114,7 +114,7 @@ contract LiquidityPool {
 
         // Check if all currency balance empty, True -> Remove user
         bool isEmpty = true;
-        for (int i = 0; i < currencyTypes.length; i++) {
+        for (uint i = 0; i < currencyTypes.length; i++) {
             if (balances[msg.sender][i] == 0) {
                 isEmpty = false;
                 break;
@@ -122,7 +122,9 @@ contract LiquidityPool {
         }
         if (isEmpty) {
             // lenderList.push(msg.sender);
-            delete lenderList[msg.sender];
+            uint i = lenderList.getI
+            // delete lenderList[msg.sender];
+            
         }
 
         emit WithdrawalMade(msg.sender, choiceOfCurrency, amount);
@@ -130,12 +132,12 @@ contract LiquidityPool {
 
     // Function to calculate interest earned on a user's balance for a specified currency
     function calculateInterest(uint256 interestRate) public {
-        for (int i = 0; i < lenderList.length; i++ ) { 
-            for (int j = 0; j < currencyTypes; j++) {
+        for (uint i = 0; i < lenderList.length; i++ ) { 
+            for (uint j = 0; j < currencyTypes.length; j++) {
                 uint256 totalBalance = balances[lenderList[i]][currencyTypes[j]];
                 uint256 interest = 0;
                 if (totalBalance > 0) {
-                    uint256 timeElapsed = block.timestamp - deposits[lenderList[i]][getDepositCount(lenderList[i], currencyTypes[j]) - 1].timestamp;
+                    uint256 timeElapsed = block.timestamp - deposits[lenderList[i]][getDepositCount(lenderList[i], currencyTypes[j]) - 1].time;
                     uint256 secondsInMonth = 2592000; // assuming 30 days in a month
                     uint256 monthsElapsed = timeElapsed / secondsInMonth;
                     interest += (totalBalance * interestRate * monthsElapsed) / 100;
@@ -211,7 +213,7 @@ contract LiquidityPool {
 
         // Check if all currency balance empty, True -> Remove user
         bool isEmpty = true;
-        for (int i = 0; i < currencyTypes.length; i++) {
+        for (uint i = 0; i < currencyTypes.length; i++) {
             if (borrowedAmounts[msg.sender][i] == 0) {
                 isEmpty = false;
                 break;
@@ -228,7 +230,7 @@ contract LiquidityPool {
     // Function to check if lender exists
     function doesLenderExist (address lender) private returns (bool) {
         bool lenderExists = false;
-        for (int i = 0; i < lenderList.length; i++) {
+        for (uint i = 0; i < lenderList.length; i++) {
             if(lenderList[i] == lender) {
                 lenderExists = true;
             }
@@ -239,7 +241,7 @@ contract LiquidityPool {
     // Function to check if borrower exists
     function doesBorrowerExist (address borrower) private returns (bool) {
         bool borrowerExists = false;
-        for (int i = 0; i < borrowerList.length; i++) {
+        for (uint i = 0; i < borrowerList.length; i++) {
             if(borrowerList[i] == borrower) {
                 borrowerExists = true;
             }
@@ -581,5 +583,19 @@ contract LiquidityPool {
     //     loans[loanId].prevOwner = loans[loanId].owner;
     //     loans[loanId].owner = newOwner;
     // }
+
+    function removeUserFromUserList(uint[] storage arr, address add) internal {
+        // require(index < arr.length, "Index out of range");
+        uint index = -1;
+        for (uint i = 0; i < arr.length - 1; i++) {
+            if (aee[i] = add) {
+                index = i;
+            }
+        }
+        for (uint i = index; i < arr.length - 1; i++) {
+            arr[i] = arr[i+1];
+        }
+        arr.pop();
+    }
 
 }
