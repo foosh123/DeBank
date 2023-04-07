@@ -6,12 +6,22 @@ import "./RNG.sol";
 import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
+import "./DeBank.sol";
 
 contract LiquidityPool {
-    RNG r = new RNG();
-    Cro cro = new Cro();
-    Shib shib = new Shib();
-    Uni uni = new Uni();
+    
+    // RNG r = new RNG();
+    // Cro cro = new Cro();
+    // Shib shib = new Shib();
+    // Uni uni = new Uni();
+
+    constructor(DeBank deBankAddress, RNG rngAddress, Cro croAddress, Shib shibAdress, Uni uniAddress) public { 
+        deBankContract = deBankAddress; 
+        r = rngAddress; 
+        cro = croAddress;
+        shib = shibAdress;
+        uni = uniAddress;
+    }
 
     struct Deposit {
         uint256 amount;
@@ -231,7 +241,7 @@ contract LiquidityPool {
         uint256 collateralAmount = collateral.amount;
         uint256 collateralCurrency = collateral.collateralCurrencyType;
 
-        require(returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) >= 1.5, "Insufficient collateral to borrow");
+        require(debankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) >= 1.5, "Insufficient collateral to borrow");
 
         // update borrowers
         if (doesBorrowerExist(msg.sender) == false) {
@@ -370,9 +380,9 @@ contract LiquidityPool {
                 uint256 collateralCurrency = collateral.currencyType;
 
                 // [Margin Call] 1.2: gives warning
-                if (returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.2) {
+                if (debankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.2) {
                     emit Log ("WARNING: Collateral ratio has dropped below 1.2! If ratio falls further below 1.05, your collateral will be liquidated!");
-                } else if (returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.05) { // [Margin Call] 1.05: liquidate
+                } else if (debankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.05) { // [Margin Call] 1.05: liquidate
                     liquidateCollateral(i, j);
                 }
             }
