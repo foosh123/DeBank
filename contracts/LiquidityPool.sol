@@ -1,12 +1,12 @@
 pragma solidity >= 0.5.0;
 // pragma experimental ABIEncoderV2;
 import "./ERC20.sol";
-import "./DSMath.sol";
+// import "./DSMath.sol";
 import "./RNG.sol";
 import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
-import "./DeBank.sol";
+import "./Debank.sol";
 import "./Helper.sol";
 
 contract LiquidityPool {
@@ -15,10 +15,10 @@ contract LiquidityPool {
     Cro cro;
     Shib shib;
     Uni uni;
-    DeBank deBankContract;
+    Debank deBankContract;
     Helper helperContract;
 
-    constructor(DeBank deBankAddress, RNG rngAddress, Cro croAddress, Shib shibAdress, Uni uniAddress, Helper helperAddress) public { 
+    constructor(Debank deBankAddress, RNG rngAddress, Cro croAddress, Shib shibAdress, Uni uniAddress, Helper helperAddress) public { 
         deBankContract = deBankAddress; 
         r = rngAddress; 
         cro = croAddress;
@@ -254,7 +254,7 @@ contract LiquidityPool {
         uint256 collateralAmount = collateral.amount;
         uint256 collateralCurrency = collateral.collateralCurrencyType;
 
-        require(debankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) >= 1.5, "Insufficient collateral to borrow");
+        require(deBankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) >= DSMath.wdiv(3,2), "Insufficient collateral to borrow");
 
         // update borrowers
         if (doesBorrowerExist(msg.sender) == false) {
@@ -311,7 +311,7 @@ contract LiquidityPool {
             //  b. if all loan is cleared, must remove the Collateral instance from the collateralAmount array (use pop)
         uint256 totalLoanAmount = borrowedAmounts[msg.sender][choiceOfCurrency];
         if (totalLoanAmount == 0) {
-            removeCollateralFromCollateralList(collateralAmounts[msg.sender][choiceOfCurrency], choiceOfCurrency);
+            removeCollateralFromCollateralList(collateralAmounts[msg.sender], choiceOfCurrency);
         }
 
         // Check if all currency balance empty, True -> Remove user
@@ -332,7 +332,7 @@ contract LiquidityPool {
 
     function getBorrowerCollateral (uint256 choiceOfCurrency) public view returns (Collateral memory) {
         Collateral memory collateral;
-        for (int i = 0; i <= collateralAmounts[msg.sender].length; i++) {
+        for (uint i = 0; i <= collateralAmounts[msg.sender].length; i++) {
             if (collateralAmounts[msg.sender][i].collateralCurrencyType == choiceOfCurrency) 
                 {
                     collateral = collateralAmounts[msg.sender][i];
@@ -364,7 +364,6 @@ contract LiquidityPool {
         if (hasCollateral) {
             c.amount += amount;
         } else {
-            c = new Collateral();
             c.currencyType = currencyType;
             c.collateralCurrencyType = currencyFor;
             c.amount = amount;
@@ -378,7 +377,7 @@ contract LiquidityPool {
     function calculateLoanInterest(uint256 interestRate) public {
         for (uint i = 0; i < borrowerList.length; i++) {
             for (uint j = 0; j < numPools; j++) {
-                uint256 totalLoanAmount = borrowedAmounts[i][j];
+                uint256 totalLoanAmount = borrowedAmounts[borrowerList[i]][j];
                 uint256 interest = 0;
                 if (totalLoanAmount > 0) {
                     uint256 timeElapsed = block.timestamp - loans[borrowerList[i]][getLoanCount(borrowerList[i], j) - 1].time;
@@ -387,16 +386,17 @@ contract LiquidityPool {
                     interest += (totalLoanAmount * interestRate * monthsElapsed) / 100;
                 }
                 borrow(j, interest);
+                totalLoanAmount = borrowedAmounts[borrowerList[i]][j];
 
                 Collateral memory collateral = getBorrowerCollateral(j);
                 uint256 collateralAmount = collateral.amount;
                 uint256 collateralCurrency = collateral.currencyType;
 
                 // [Margin Call] 1.2: gives warning
-                if (debankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.2) {
+                if (deBankContract.returnRatio(j, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(6,5)) {
                     emit Log ("WARNING: Collateral ratio has dropped below 1.2! If ratio falls further below 1.05, your collateral will be liquidated!");
-                } else if (debankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.05) { // [Margin Call] 1.05: liquidate
-                    liquidateCollateral(i, j);
+                } else if (deBankContract.returnRatio(j, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(21,20)) { // [Margin Call] 1.05: liquidate
+                    liquidateCollateral(borrowerList[i], j);
                 }
             }
         }
@@ -405,9 +405,9 @@ contract LiquidityPool {
 
     // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
     // Function to liquidate collateral when value ratio falls below trashhold
-    function liquidateCollateral(uint256 borrower, uint256 currencyFor) private {
+    function liquidateCollateral(address borrower, uint256 currencyFor) private {
         // [Margin call] If < x1.05, liquidate (move the amount to the pool), and borrowers can keep the loan amount
-        removeCollateralFromCollateralList(collateralAmounts[borrower][currencyFor], currencyFor);
+        removeCollateralFromCollateralList(collateralAmounts[borrower], currencyFor);
     }
 
     //--------------Helper Methods----------------
@@ -523,7 +523,7 @@ contract LiquidityPool {
         arr.pop();
     }
 
-    function removeCollateralFromCollateralList(address[] storage arr, uint256 currencyFor) internal {
+    function removeCollateralFromCollateralList(Collateral[] storage arr, uint256 currencyFor) internal {
         // require(index < arr.length, "Index out of range");
         uint index = 0;
         for (uint i = 0; i < arr.length - 1; i++) {
