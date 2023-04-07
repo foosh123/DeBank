@@ -8,24 +8,11 @@ import "./Shib.sol";
 import "./Uni.sol";
 
 contract LiquidityPool {
-
-    address public owner;
-    // uint256[] numPools;
-    address[] borrowerList;
-    address[] lenderList;
     RNG r = new RNG();
     Cro cro = new Cro();
     Shib shib = new Shib();
     Uni uni = new Uni();
 
-    // mapping(uint256 => mapping(address => uint256)) borrowers;
-    // mapping(uint256 => mapping(address => uint256)) lenders;
-    // mapping(address => Deposit[]) lendersDeposit; // userAdd => Deposit
-    // mapping(address => mapping(uint256 => uint256)) lenderBalances;  //userAddress => (currencyType => amount)
-   
-    // mapping(address => Deposit[]) borrowersDeposit; // userAdd => Deposit
-    // mapping(address => mapping(uint256 => uint256)) borrowersBalances;  //userAddress => (currencyType => amount)
-    
     struct Deposit {
         uint256 amount;
         uint256 time;
@@ -55,11 +42,77 @@ contract LiquidityPool {
         uint256 amount;
     }
 
+    address public owner;
+    // uint256[] numPools;
+    address[] borrowerList;
+    address[] lenderList;
+    uint256 public numPools = 0;
+    mapping(uint256 => liquidityPool) public pools;
+
     mapping(address => Deposit[]) deposits;
     mapping(address => Loan[]) loans;
     mapping(address => mapping(uint256 => uint256)) balances; //userAddress => (currencyType => amount)
     mapping(address => mapping(uint256 => uint256)) borrowedAmounts; //userAddress => (currencyType => amount)
     mapping(address => Collateral[]) collateralAmounts; //userAddress => (currencyType => amount)
+
+    event DepositMade(address lender, uint256 choiceOfCurrency, uint256 depositAmount);
+    event LoanBorrowed(address borrower, uint256 choiceOfCurrency, uint256 loanAmount);
+    event WithdrawalMade(address lender, uint256 choiceOfCurrency, uint256 withdrawnAmount);
+    event LoanReturned(address borrower, uint256 choiceOfCurrency, uint256 returnedAmount);
+    event LogOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Transfered(uint choiceOfCurrency, uint256 amount);
+    
+
+    //modifier to ensure a function is callable only by its owner    
+    modifier ownerOnly() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    modifier isValidCurrency(uint256 currencyType) {
+        bool isValid = false;
+        for (uint i=0; i < numPools; i++) {
+            if(currencyType == i) {
+                isValid = true;
+            }
+        }
+        require (isValid == true, "The Currency is not supported yet!");
+        _;
+    }
+
+    function transferOwnership(address newOwner) public ownerOnly {
+        require(newOwner != address(0));
+        emit LogOwnershipTransferred(owner, newOwner);
+        owner = newOwner;
+    }
+
+    // Only owner can create pools
+    function addNewPool(
+        string memory currencyTypeName
+    ) public payable ownerOnly returns(uint256) {
+        //require(numberOfSides > 0);
+        //require((msg.value) > 0.00 ether, "Please deposit a minimum amount to initiate a new currency pool");
+        
+        //new pool object
+        liquidityPool memory newLiquidityPool = liquidityPool(
+            numPools,
+            currencyTypeName,
+            msg.value,     
+            0,
+            0,
+            msg.sender,  //owner
+            address(0) //prev owner
+        );
+        
+        pools[numPools] = newLiquidityPool; //commit to state variable
+        // numPools.push(currencyType);
+        numPools++;
+        return numPools;   //return new poolId
+    }
+
+    function checkPoolAmount (uint choiceOfCurrency) public view returns (uint256) {
+        return pools[choiceOfCurrency].poolAmount;
+    }
 
     // Function to deposit funds
     function deposit(uint256 choiceOfCurrency, uint256 depositAmount) public {// isValidCurrency(choiceOfCurrency) 
@@ -71,8 +124,8 @@ contract LiquidityPool {
         }
 
         // Create a new deposit struct and add it to the deposits mapping for this user
-        Deposit memory deposit = Deposit(depositAmount, block.timestamp, choiceOfCurrency);
-        deposits[msg.sender].push(deposit);
+        Deposit memory d= Deposit(depositAmount, block.timestamp, choiceOfCurrency);
+        deposits[msg.sender].push(d);
 
         //transfer the token
         depositToken(choiceOfCurrency, depositAmount);
@@ -230,7 +283,7 @@ contract LiquidityPool {
 
     //--------------Helper Methods----------------
     // Function to check if lender exists
-    function doesLenderExist (address lender) private returns (bool) {
+    function doesLenderExist (address lender) private view returns (bool) {
         bool lenderExists = false;
         for (uint i = 0; i < lenderList.length; i++) {
             if(lenderList[i] == lender) {
@@ -241,7 +294,7 @@ contract LiquidityPool {
     }
 
     // Function to check if borrower exists
-    function doesBorrowerExist (address borrower) private returns (bool) {
+    function doesBorrowerExist (address borrower) private view returns (bool) {
         bool borrowerExists = false;
         for (uint i = 0; i < borrowerList.length; i++) {
             if(borrowerList[i] == borrower) {
@@ -251,158 +304,6 @@ contract LiquidityPool {
         return borrowerExists;
     }
 
-    //===========================Old code, can refer!!! ==================================================
-    uint256 public numPools = 0;
-    mapping(uint256 => liquidityPool) public pools;
-
-    event DepositMade(address lender, uint256 choiceOfCurrency, uint256 depositAmount);
-    event LoanBorrowed(address borrower, uint256 choiceOfCurrency, uint256 loanAmount);
-    event WithdrawalMade(address lender, uint256 choiceOfCurrency, uint256 withdrawnAmount);
-    event LoanReturned(address borrower, uint256 choiceOfCurrency, uint256 returnedAmount);
-    event LogOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event Transfered(uint choiceOfCurrency, uint256 amount);
-    
-
-    //modifier to ensure a function is callable only by its owner    
-    modifier ownerOnly() {
-        require(msg.sender == owner);
-        _;
-    }
-
-    modifier isValidCurrency(uint256 currencyType) {
-        bool isValid = false;
-        for (uint i=0; i < numPools; i++) {
-            if(currencyType == i) {
-                isValid = true;
-            }
-        }
-        require (isValid == true, "The Currency is not supported yet!");
-        _;
-    }
-
-    // function Owned() public {
-    //     owner = msg.sender;
-    // }
-
-    function transferOwnership(address newOwner) public ownerOnly {
-        require(newOwner != address(0));
-        emit LogOwnershipTransferred(owner, newOwner);
-        owner = newOwner;
-    }
-
-    // Only owner can create pools
-    function addNewPool(
-        string memory currencyTypeName
-    ) public payable ownerOnly returns(uint256) {
-        //require(numberOfSides > 0);
-        //require((msg.value) > 0.00 ether, "Please deposit a minimum amount to initiate a new currency pool");
-        
-        //new pool object
-        liquidityPool memory newLiquidityPool = liquidityPool(
-            numPools,
-            currencyTypeName,
-            msg.value,     
-            0,
-            0,
-            msg.sender,  //owner
-            address(0) //prev owner
-        );
-        
-        
-        // uint256 newPoolId = numPools++;
-        pools[numPools] = newLiquidityPool; //commit to state variable
-        // numPools.push(currencyType);
-        numPools++;
-        return numPools;   //return new poolId
-    }
-
-    // modifier validLoanId(uint256 loanId) {
-    //     require(loanId < numLoans);
-    //     _;
-    // }
-
-    function checkPoolAmount (uint choiceOfCurrency) public view returns (uint256) {
-        return pools[choiceOfCurrency].poolAmount;
-    }
-
-    // function getListOfnumPools() public view returns (string memory) {
-    //     string memory result = "";
-    //     for (uint i=0; i<numPools.length; i++) {
-    //         string.concat(result, numPools[i]);
-    //     }        
-    //     return result;
-    // }
-
-    //-------------Lender Mentods-----------------------
-    // function depositToLiquidityPool(string memory choiceOfCurrency, uint256 depositAmount) public isValidCurrency(choiceOfCurrency) {
-
-    //     liquidityPool storage pool = pools[choiceOfCurrency];
-    //     uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
-
-    //     require (depositAmount > 0, "Can't deposit 0 tokens");
-
-    //     //transfer token to pool
-    //     depositToken(choiceOfCurrency, depositAmount);
-
-    //     // uint256 existingAmount = pool.lenders[msg.sender];
-    //     lenders[poolLoanId][msg.sender] += depositAmount;
-    //     // pool.lenders[msg.sender] += depositAmount;
-
-    //     pool.poolAmount += depositAmount;
-    //     // pool.lenders[msg.sender] = existingAmount;
-    //     // pool.lendersList.push(msg.sender);
-
-    //     emit DepositMade(msg.sender, choiceOfCurrency, depositAmount);
-    // }
-
-    // function withdrawFromLiquidityPool(string memory choiceOfCurrency, uint256 withdrawalAmount) public isValidCurrency(choiceOfCurrency) {
-
-    //     liquidityPool storage pool = pools[choiceOfCurrency];
-    //     uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
-
-    //     require (lenders[poolLoanId][msg.sender] >= withdrawalAmount, "Not enough tokens to withdraw");
-
-    //     //transfer token to pool
-    //     withdrawToken(choiceOfCurrency, withdrawalAmount);
-
-    //     lenders[poolLoanId][msg.sender] = lenders[poolLoanId][msg.sender] - withdrawalAmount;
-    //     pool.poolAmount -= withdrawalAmount;
-
-    //     emit WithdrawalMade(msg.sender, choiceOfCurrency, withdrawalAmount);
-    // }
-
-    // //-------------Borrower Mentods-----------------------
-    // function borrowFromLiquidityPool(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
-
-    //     liquidityPool storage pool = pools[choiceOfCurrency];
-    //     uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
-
-    //     require (amt > 0, "Can't borrow 0 tokens");
-        
-    //     //transfer token to pool
-    //     withdrawToken(choiceOfCurrency, amt);
-
-    //     borrowers[poolLoanId][msg.sender] += amt;
-    //     pool.poolAmount -= amt;
-
-    //     emit LoanBorrowed(msg.sender, choiceOfCurrency, amt);
-    // }
-
-    // function returnToLiquidityPool(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
-
-    //     liquidityPool storage pool = pools[choiceOfCurrency];
-    //     uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
-
-    //     require (borrowers[poolLoanId][msg.sender] < amt, "Too many tokens returned");
-
-    //     //transfer token to pool
-    //     depositToken(choiceOfCurrency, amt);
-
-    //     borrowers[poolLoanId][msg.sender] = borrowers[poolLoanId][msg.sender] - amt;
-    //     pool.poolAmount += amt;
-
-    //     emit LoanReturned(msg.sender, choiceOfCurrency, amt);
-    // }
 
     //-----------Pool Token Transfer Methods-----------------
     function depositToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
@@ -419,19 +320,6 @@ contract LiquidityPool {
             uni.sendToken(msg.sender, address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } 
-        // if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) { //choiceOfCurrency == 0 
-        //     require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
-        //     cro.sendToken(msg.sender, address(this), amt);
-        //     emit Transfered(choiceOfCurrency, amt);
-        // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Shib")) ) {
-        //     require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
-        //     shib.sendToken(msg.sender, address(this), amt);
-        //     emit Transfered(choiceOfCurrency, amt);
-        // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Uni")) ) {
-        //     require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
-        //     uni.sendToken(msg.sender, address(this), amt);
-        //     emit Transfered(choiceOfCurrency, amt);
-        // } 
     }
 
     function withdrawToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
@@ -448,19 +336,6 @@ contract LiquidityPool {
             uni.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } 
-        // if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
-        //     require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
-        //     cro.sendToken(address(this), msg.sender, amt);
-        //     emit Transfered(choiceOfCurrency, amt);
-        // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Shib")) ) {
-        //     require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
-        //     shib.sendToken(address(this), msg.sender, amt);
-        //     emit Transfered(choiceOfCurrency, amt);
-        // } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Uni")) ) {
-        //     require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
-        //     uni.sendToken(address(this), msg.sender, amt);
-        //     emit Transfered(choiceOfCurrency, amt);
-        // } 
     }
 
     //----------setter methods-------------
@@ -485,25 +360,6 @@ contract LiquidityPool {
             return "Invalid Currency Type";
         }
     }
-    // function getBorrowerPoolLoanId(string memory choiceOfCurrency) public view returns (uint256) {
-    //     return pools[choiceOfCurrency].poolLoanId;
-    // }
-
-    // function getLenderPoolLoanId(string memory choiceOfCurrency) public view returns (uint256) {
-    //     return pools[choiceOfCurrency].poolLoanId;
-    // }
-
-    // function getBorrowerLoanAmount(string memory choiceOfCurrency, address borrower) public view returns (uint256) {
-    //     uint256 poolLoanId = getBorrowerPoolLoanId(choiceOfCurrency);
-    //     return borrowers[poolLoanId][borrower];
-    //     // return pools[choiceOfCurrency].borrowers[borrower];
-    // }
-
-    // function getLenderLoanAmount(string memory choiceOfCurrency, address lender) public view returns (uint256) {
-    //     uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
-    //     return lenders[poolLoanId][lender];
-    //     // return pools[choiceOfCurrency].lenders[lender];
-    // }
     
     // Function to get the user's loan balance for a specified currency
     function getLoanBalance(address user, uint256 currencyType) public view returns (uint256) {
@@ -522,12 +378,6 @@ contract LiquidityPool {
     function getLenderInterestRate(uint choiceOfCurrency) public view returns (uint256) {
         return pools[choiceOfCurrency].lenderInterestRate;
     }
-
-    //transfer ???
-    // function transfer(address newOwner, ) public ownerOnly(loanId) validLoanId(loanId) {
-    //     loans[loanId].prevOwner = loans[loanId].owner;
-    //     loans[loanId].owner = newOwner;
-    // }
 
     function removeUserFromUserList(address[] storage arr, address add) internal {
         // require(index < arr.length, "Index out of range");
