@@ -7,20 +7,24 @@ import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
 import "./DeBank.sol";
+import "./Helper.sol";
 
 contract LiquidityPool {
     
-    // RNG r = new RNG();
-    // Cro cro = new Cro();
-    // Shib shib = new Shib();
-    // Uni uni = new Uni();
+    RNG r;
+    Cro cro;
+    Shib shib;
+    Uni uni;
+    DeBank deBankContract;
+    Helper helperContract;
 
-    constructor(DeBank deBankAddress, RNG rngAddress, Cro croAddress, Shib shibAdress, Uni uniAddress) public { 
+    constructor(DeBank deBankAddress, RNG rngAddress, Cro croAddress, Shib shibAdress, Uni uniAddress, Helper helperAddress) public { 
         deBankContract = deBankAddress; 
         r = rngAddress; 
         cro = croAddress;
         shib = shibAdress;
         uni = uniAddress;
+        helperContract = helperAddress;
     }
 
     struct Deposit {
@@ -128,6 +132,10 @@ contract LiquidityPool {
 
     // Function to deposit funds
     function deposit(uint256 choiceOfCurrency, uint256 depositAmount) public {// isValidCurrency(choiceOfCurrency) 
+        // A 0.05% of platform fee will be charged
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        
+        // uint256 platformFee = helperContract.;
         require(depositAmount > 0, "Deposit amount must be greater than 0");
         
         // update lenders
@@ -154,6 +162,7 @@ contract LiquidityPool {
     function withdraw(uint256 amount, uint256 choiceOfCurrency) public {
         require(amount > 0, "Withdrawal amount must be greater than 0");
         require(balances[msg.sender][choiceOfCurrency] >= amount, "Insufficient balance");
+
         balances[msg.sender][choiceOfCurrency] -= amount;
 
         uint256 withdrawnAmount = amount;
@@ -171,8 +180,6 @@ contract LiquidityPool {
             }
         }
 
-        // transfer the token
-        withdrawToken(choiceOfCurrency, amount);
 
         // Return amount to total pool
         pools[choiceOfCurrency].poolAmount -= amount;
@@ -188,6 +195,12 @@ contract LiquidityPool {
         if (isEmpty) {
             removeUserFromUserList(lenderList, msg.sender);
         }
+
+        // Each withdrawal will incur a fixed amount of transaction fees {$10 USD}
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        // transfer the token
+        withdrawToken(choiceOfCurrency, amount);
 
         emit WithdrawalMade(msg.sender, choiceOfCurrency, amount);
     }
