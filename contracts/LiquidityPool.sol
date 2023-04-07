@@ -10,7 +10,7 @@ import "./Uni.sol";
 contract LiquidityPool {
 
     address public owner;
-    uint256[] currencyTypes;
+    // uint256[] numPools;
     address[] borrowerList;
     address[] lenderList;
     RNG r = new RNG();
@@ -40,13 +40,13 @@ contract LiquidityPool {
     }
 
     struct liquidityPool {
-        string currencyType;
+        uint256 poolLoanId;   
+        string currencyTypeName;
         uint256 poolAmount;       
         uint256 borrowerInterestRate;
         uint256 lenderInterestRate;
         address owner;
         address prevOwner;
-        uint256 poolLoanId;      
     }
 
     struct Collateral {
@@ -114,7 +114,7 @@ contract LiquidityPool {
 
         // Check if all currency balance empty, True -> Remove user
         bool isEmpty = true;
-        for (uint i = 0; i < currencyTypes.length; i++) {
+        for (uint i = 0; i < numPools; i++) {
             if (balances[msg.sender][i] == 0) {
                 isEmpty = false;
                 break;
@@ -122,8 +122,9 @@ contract LiquidityPool {
         }
         if (isEmpty) {
             // lenderList.push(msg.sender);
-            uint i = lenderList.getI
+            // uint i = lenderList.getI
             // delete lenderList[msg.sender];
+            removeUserFromUserList(lenderList, msg.sender);
             
         }
 
@@ -133,16 +134,16 @@ contract LiquidityPool {
     // Function to calculate interest earned on a user's balance for a specified currency
     function calculateInterest(uint256 interestRate) public {
         for (uint i = 0; i < lenderList.length; i++ ) { 
-            for (uint j = 0; j < currencyTypes.length; j++) {
-                uint256 totalBalance = balances[lenderList[i]][currencyTypes[j]];
+            for (uint j = 0; j < numPools; j++) {
+                uint256 totalBalance = balances[lenderList[i]][j];
                 uint256 interest = 0;
                 if (totalBalance > 0) {
-                    uint256 timeElapsed = block.timestamp - deposits[lenderList[i]][getDepositCount(lenderList[i], currencyTypes[j]) - 1].time;
+                    uint256 timeElapsed = block.timestamp - deposits[lenderList[i]][getDepositCount(lenderList[i], j) - 1].time;
                     uint256 secondsInMonth = 2592000; // assuming 30 days in a month
                     uint256 monthsElapsed = timeElapsed / secondsInMonth;
                     interest += (totalBalance * interestRate * monthsElapsed) / 100;
                 }
-                Deposit(currencyTypes[j],interest);
+                deposit(j,interest);
             }
         }
     }
@@ -213,14 +214,15 @@ contract LiquidityPool {
 
         // Check if all currency balance empty, True -> Remove user
         bool isEmpty = true;
-        for (uint i = 0; i < currencyTypes.length; i++) {
+        for (uint i = 0; i < numPools; i++) {
             if (borrowedAmounts[msg.sender][i] == 0) {
                 isEmpty = false;
                 break;
             }
         }
         if (isEmpty) {
-            delete borrowerList[msg.sender];
+            // delete borrowerList[msg.sender];
+            removeUserFromUserList(borrowerList, msg.sender);
         }
 
         emit LoanReturned(msg.sender, choiceOfCurrency, amount);
@@ -258,7 +260,7 @@ contract LiquidityPool {
     event WithdrawalMade(address lender, uint256 choiceOfCurrency, uint256 withdrawnAmount);
     event LoanReturned(address borrower, uint256 choiceOfCurrency, uint256 returnedAmount);
     event LogOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event Transfered(string choiceOfCurrency, uint256 amount);
+    event Transfered(uint choiceOfCurrency, uint256 amount);
     
 
     //modifier to ensure a function is callable only by its owner    
@@ -269,7 +271,7 @@ contract LiquidityPool {
 
     modifier isValidCurrency(uint256 currencyType) {
         bool isValid = false;
-        for (uint i=0; i < currencyTypes.length; i++) {
+        for (uint i=0; i < numPools; i++) {
             if(currencyType == i) {
                 isValid = true;
             }
@@ -290,26 +292,27 @@ contract LiquidityPool {
 
     // Only owner can create pools
     function addNewPool(
-        string memory currencyType
+        string memory currencyTypeName
     ) public payable ownerOnly returns(uint256) {
         //require(numberOfSides > 0);
         //require((msg.value) > 0.00 ether, "Please deposit a minimum amount to initiate a new currency pool");
         
         //new pool object
         liquidityPool memory newLiquidityPool = liquidityPool(
-            currencyType,
+            numPools,
+            currencyTypeName,
             msg.value,     
             0,
             0,
             msg.sender,  //owner
-            address(0), //prev owner
-            numPools
+            address(0) //prev owner
         );
         
-        numPools++;
+        
         // uint256 newPoolId = numPools++;
-        pools[currencyType] = newLiquidityPool; //commit to state variable
-        currencyTypes.push(currencyType);
+        pools[numPools] = newLiquidityPool; //commit to state variable
+        // numPools.push(currencyType);
+        numPools++;
         return numPools;   //return new poolId
     }
 
@@ -318,14 +321,14 @@ contract LiquidityPool {
     //     _;
     // }
 
-    function checkPoolAmount (string memory choiceOfCurrency) public view returns (uint256) {
+    function checkPoolAmount (uint choiceOfCurrency) public view returns (uint256) {
         return pools[choiceOfCurrency].poolAmount;
     }
 
-    // function getListOfCurrencyTypes() public view returns (string memory) {
+    // function getListOfnumPools() public view returns (string memory) {
     //     string memory result = "";
-    //     for (uint i=0; i<currencyTypes.length; i++) {
-    //         string.concat(result, currencyTypes[i]);
+    //     for (uint i=0; i<numPools.length; i++) {
+    //         string.concat(result, numPools[i]);
     //     }        
     //     return result;
     // }
@@ -570,11 +573,11 @@ contract LiquidityPool {
         return balances[user][currencyType];
     }
 
-    function getBorrowerInterestRate(string memory choiceOfCurrency) public view returns (uint256) {
+    function getBorrowerInterestRate(uint choiceOfCurrency) public view returns (uint256) {
         return pools[choiceOfCurrency].borrowerInterestRate;
     }
 
-    function getLenderInterestRate(string memory choiceOfCurrency) public view returns (uint256) {
+    function getLenderInterestRate(uint choiceOfCurrency) public view returns (uint256) {
         return pools[choiceOfCurrency].lenderInterestRate;
     }
 
@@ -584,11 +587,11 @@ contract LiquidityPool {
     //     loans[loanId].owner = newOwner;
     // }
 
-    function removeUserFromUserList(uint[] storage arr, address add) internal {
+    function removeUserFromUserList(address[] storage arr, address add) internal {
         // require(index < arr.length, "Index out of range");
-        uint index = -1;
+        uint index = 0;
         for (uint i = 0; i < arr.length - 1; i++) {
-            if (arr[i] = add) {
+            if (arr[i] == add) {
                 index = i;
             }
         }
