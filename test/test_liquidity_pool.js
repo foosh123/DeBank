@@ -1,3 +1,33 @@
+// create pool * 3
+
+// lend currency
+
+// lend currency with insufficient amount
+
+// withdraw currency with correct interest added
+
+// borrow money with insufficient collateral
+
+// deposit collateral & borrow money 
+
+// margin call warning: collateral < x1.2
+
+// margin call liquidate: collateral < x1.05
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // const _deploy_contracts = require("../migrations/2_deploy_contracts");
 // const truffleAssert = require("truffle-assertions");
 // const BigNumber = require('bignumber.js'); // npm install bignumber.js
