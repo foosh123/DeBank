@@ -6,7 +6,7 @@ contract PriceConsumer{
     function setPrice(uint8 forcedNumber) public{
          price = forcedNumber;
     }
-    function getLatestPrice() public view returns (int8) {
+    function getLatestPrice() public view returns (uint8) {
         return price;
     }
 }
