@@ -37,7 +37,7 @@ contract LiquidityPool {
     }
 
     struct Collateral {
-        uint256 currencyType;
+        uint256 currencyType; //the one wanna borrow
         uint256 collateralCurrencyType; // what type the collateral is for
         uint256 amount;
     }
@@ -50,8 +50,9 @@ contract LiquidityPool {
     mapping(uint256 => liquidityPool) public pools;
 
     mapping(address => Deposit[]) deposits;
-    mapping(address => Loan[]) loans;
     mapping(address => mapping(uint256 => uint256)) balances; //userAddress => (currencyType => amount)
+    
+    mapping(address => Loan[]) loans;
     mapping(address => mapping(uint256 => uint256)) borrowedAmounts; //userAddress => (currencyType => amount)
     mapping(address => Collateral[]) collateralAmounts; //userAddress => (currencyType => amount)
 
