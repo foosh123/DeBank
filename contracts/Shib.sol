@@ -32,4 +32,8 @@ contract Shib {
     function sendToken(address from, address to, uint256 amt) public{   
         erc20Contract.transferFrom(from,to,amt);
     }
+
+    function sendToken(address to, uint256 amt) public {   
+        erc20Contract.transfer(to,amt);
+    }
 }

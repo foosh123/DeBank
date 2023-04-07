@@ -2,85 +2,136 @@ pragma solidity >= 0.5.0;
 
 
 contract SpotOnContract {
-    string[] currencyTypes;
-    
-
     struct spotOnContract {
         uint256 spotOnContractId;
-        string currency;
+        uint256 currency; 
         uint256 amount;
+        uint256 repaymentAmount;
         uint256 acceptableRange;
         uint256 loadPeriod;
-        uint256 interestRate;
+        uint256 interestRate; //monthly interest rate
         uint256 collateral;
-        uint256 startedDate;
-        uint256 repaymentDueDate;
+        uint256 collateralCurrency;
+        uint256 startDate;
         address borrower;
         address lender;  
     }
+    mapping(uint256 => address) spotOnContractAddress;
     uint256 public numOfContracts = 0;
-    mapping(uint256 => spotOnContract) public spotOnContracts; // tracks all spotOnContracts
+    uint256 public numOfClosedContracts = 0;
+    mapping(uint256 => spotOnContract) public activeSpotOnContracts; // tracks all active spotOnContracts
+    mapping(uint256 => spotOnContract) public closedSpotOnContracts; //tracks all closed spotOnContracts
 
+    function closeContract(uint256 spotOnContractId) public {
+        closedSpotOnContracts[spotOnContractId] = activeSpotOnContracts[spotOnContractId];
+        delete activeSpotOnContracts[spotOnContractId];
+        numOfClosedContracts++;
+    }
+
+    function getSpotOnContractAddress(uint256 spotOnContractId) public view returns(address) {
+        return spotOnContractAddress[spotOnContractId];
+    }
 
     function getSpotOnLender(uint256 spotOnContractId) public view returns(address) {
-        return spotOnContracts[spotOnContractId].lender;
+        return activeSpotOnContracts[spotOnContractId].lender;
     }
 
     function getSpotOnBorrower(uint256 spotOnContractId) public view returns(address) {
-        return spotOnContracts[spotOnContractId].borrower;
+        return activeSpotOnContracts[spotOnContractId].borrower;
     }
 
     function getTimeStamp() public view returns(uint) {
         return block.timestamp;
     }
 
-    function getCurrencyType(uint256 spotOnContractId) public view returns(string memory) {
-        return spotOnContracts[spotOnContractId].currency;
+    function getCurrencyType(uint256 spotOnContractId) public view returns(uint256) {
+        return activeSpotOnContracts[spotOnContractId].currency;
     }
 
     function getCollateralAmount(uint256 spotOnContractId) public view returns(uint256) {
-        return spotOnContracts[spotOnContractId].collateral;
+        return activeSpotOnContracts[spotOnContractId].collateral;
+    }
+
+    function getCollateralCurrency(uint256 spotOnContractId) public view returns(uint256) {
+        return activeSpotOnContracts[spotOnContractId].collateralCurrency;
     }
 
     function getAmount(uint256 spotOnContractId) public view returns(uint256) {
-        return spotOnContracts[spotOnContractId].amount;
+        return activeSpotOnContracts[spotOnContractId].amount;
+    }
+
+    function getLoanPeriod(uint256 spotOnContractId) public view returns(uint256) {
+        return activeSpotOnContracts[spotOnContractId].loadPeriod;
+    }
+
+    function getInterestRate(uint256 spotOnContractId) public view returns(uint256) {
+        return activeSpotOnContracts[spotOnContractId].interestRate;
+    }
+
+    function getAcceptableRange(uint256 spotOnContractId) public view returns(uint256) {
+        return activeSpotOnContracts[spotOnContractId].acceptableRange;
     }
 
     function createContract(
         uint256 amount,
-        string memory currency,
+        uint256 currency,
         uint256 acceptableRange,
-        uint256 loanPeriod,
         uint256 interestRate,
-        uint256 collateral
+        uint256 loanPeriod,
+        uint256 collateral,
+        uint256 collateralCurrency
     ) public returns(uint256) {
-        uint timeNow = getTimeStamp();
-        uint spotOnId = numOfContracts++;
+        uint spotOnContractId = numOfContracts++;
         spotOnContract memory newSpotOnContract = spotOnContract(
-            spotOnId,
+            spotOnContractId,
             currency,
             amount,
+            0,
             acceptableRange,
             loanPeriod,
             interestRate,
             collateral,
-            timeNow,
-            timeNow + loanPeriod,
+            collateralCurrency,
+            0,
             address(0),
             address(0)
         );
-        spotOnContracts[spotOnId] = newSpotOnContract;
-        return spotOnId;
+        activeSpotOnContracts[spotOnContractId] = newSpotOnContract;
+        spotOnContractAddress[spotOnContractId] = address(this);
+        return spotOnContractId;
     }
 
-    function setBorrower(uint256 spotOnId, address borrowerAddress) public {
-        spotOnContracts[spotOnId].borrower = borrowerAddress;
+    //function set loan start and end date
+    function setLoanDates(uint256 spotOnContractId, uint256 startDate) public {
+        activeSpotOnContracts[spotOnContractId].startDate = startDate;
     }
 
-    function setLender(uint256 spotOnId, address lenderAddress) public {
-        spotOnContracts[spotOnId].lender = lenderAddress;
+    //function set repaymentAmount
+    function setRepaymentAmount(uint256 spotOnContractId, uint256 startDate, uint256 endDate, uint256 interestRate, uint256 amount) public {
+        uint256 daysBetween = (endDate - startDate) / 86400; // Number of seconds in a day
+        uint256 monthsBetween = daysBetween / 30; // Approximate number of months between the dates
+        uint256 interestRatePerMonth = interestRate;
+        uint256 totalAmountDue = amount;
+        for (uint256 i = 0; i < monthsBetween; i++) {
+            totalAmountDue = (amount * (10000 + interestRatePerMonth)) / 10000; // Compounding interest monthly
+        }
+        activeSpotOnContracts[spotOnContractId].repaymentAmount = totalAmountDue;
     }
 
+    function setBorrower(uint256 spotOnContractId, address borrowerAddress) public {
+        activeSpotOnContracts[spotOnContractId].borrower = borrowerAddress;
+    }
 
+    function setLender(uint256 spotOnContractId, address lenderAddress) public {
+        activeSpotOnContracts[spotOnContractId].lender = lenderAddress;
+    }
+
+    function setAmount(uint256 spotOnContractId, uint256 newAmount) public {
+        activeSpotOnContracts[spotOnContractId].amount = newAmount;
+    }
+
+    function addCollateral(uint256 spotOnContractId, uint256 collateralAmount) public {
+        activeSpotOnContracts[spotOnContractId].collateral += collateralAmount;
+    }
 
 }

@@ -1,10 +1,40 @@
 pragma solidity >= 0.5.0;
+import "./RNG.sol";
+import "./Cro.sol";
+import "./Shib.sol";
+import "./Uni.sol";
 
-contract DeBank{
+library DSMath {
+    using SafeMath for uint256;
+    uint256 constant PRECISION = 10**18;
+    function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = x.mul(PRECISION).add(y.div(2)).div(y);
+    }
+}
 
+contract Debank{
+    using DSMath for uint256;
     Cro cro = new Cro();
     Shib shib = new Shib();
     Uni uni = new Uni();
+    uint256 croRate;
+    uint256 shibRate;
+    uint256 uniRate;
+
+    function initializeCro(uint256 x, uint256 y) public returns (uint256) {
+        croRate = x.wdiv(y);
+        return croRate;
+    }
+
+    function initializeShib(uint256 x, uint256 y) public returns (uint256) {
+        shibRate = x.wdiv(y);
+        return shibRate;
+    }
+
+    function initializeUni(uint256 x, uint256 y) public returns (uint256) {
+        uniRate = x.wdiv(y);
+        return uniRate;
+    }
 
     struct user{
         string name;
@@ -41,7 +71,6 @@ contract DeBank{
         Users[newUserId] = newUser; 
         return newUserId;   
 
-
     }
 
     function checkBalance(uint256 id) public view validUserId(id) returns(uint256){
@@ -57,7 +86,9 @@ contract DeBank{
         require(amt > 0 , "Cannot withdraw 0 ETH");
         require(amt >= Users[id].balance);
         Users[id].balance -= amt;
-        msg.sender.transfer(amt);
+        address payable recipient = payable(msg.sender);
+        recipient.transfer(amt);
+        // msg.sender.transfer(amt);
     }
 
 
@@ -82,7 +113,7 @@ contract DeBank{
     function convertBackToETH(string memory choiceOfCurrency, uint256 id, uint256 amt) public {
         if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
             require(cro.checkBalance() >= amt, "You dont have enough CRO");
-            cro.sendToken(msg.sender,address(this),amt);
+            cro.sendToken(address(this),amt);
             Users[id].balance += amt/100;
             emit Withdraw(choiceOfCurrency, amt);
         } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Shib")) ) {
@@ -96,6 +127,26 @@ contract DeBank{
             Users[id].balance += amt/10;
             emit Withdraw(choiceOfCurrency, amt);
         } 
+    }
+
+    function returnRatio(uint256 currencyType, uint256 amount, uint256 collateralCurrency, uint256 collateralAmount) public returns (uint256) { 
+        if (currencyType == 0) { 
+            amount = croRate * amount; 
+        } else if (currencyType == 1) { 
+            amount = shibRate * amount; 
+        } else if (currencyType == 2) {  
+            amount = uniRate * amount; 
+        } 
+
+        if (collateralCurrency == 0) { 
+            collateralAmount = croRate * collateralAmount; 
+        } else if (collateralCurrency == 1) { 
+            collateralAmount = shibRate * collateralAmount; 
+        } else if (collateralCurrency == 2) { 
+            collateralAmount = uniRate * collateralAmount;             
+        } 
+ 
+        return collateralAmount.wdiv(amount); 
     }
 
 }
