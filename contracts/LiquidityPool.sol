@@ -174,11 +174,7 @@ contract LiquidityPool {
             }
         }
         if (isEmpty) {
-            // lenderList.push(msg.sender);
-            // uint i = lenderList.getI
-            // delete lenderList[msg.sender];
             removeUserFromUserList(lenderList, msg.sender);
-            
         }
 
         emit WithdrawalMade(msg.sender, choiceOfCurrency, amount);
@@ -349,16 +345,17 @@ contract LiquidityPool {
 
     //----------getter methods-------------
     function getCurrencyName(uint256 choiceOfCurrency) public view returns (string memory) {
-        string memory name;
-        if (choiceOfCurrency == 0) {
-            return "Cro";
-        } else if (choiceOfCurrency == 1) {
-            return "Shib";
-        } else if (choiceOfCurrency == 2) {
-            return "Uni";
-        } else {
-            return "Invalid Currency Type";
-        }
+        require (choiceOfCurrency < numPools, "Invalid Currency Type");
+        return pools[choiceOfCurrency].currencyTypeName;
+        // if (choiceOfCurrency == 0) {
+        //     return "Cro";
+        // } else if (choiceOfCurrency == 1) {
+        //     return "Shib";
+        // } else if (choiceOfCurrency == 2) {
+        //     return "Uni";
+        // } else {
+        //     return "Invalid Currency Type";
+        // }
     }
     
     // Function to get the user's loan balance for a specified currency
