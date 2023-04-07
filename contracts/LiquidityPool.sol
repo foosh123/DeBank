@@ -62,6 +62,7 @@ contract LiquidityPool {
     event LoanReturned(address borrower, uint256 choiceOfCurrency, uint256 returnedAmount);
     event LogOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Transfered(uint choiceOfCurrency, uint256 amount);
+    event Log(string message);
     
 
     //modifier to ensure a function is callable only by its owner    
@@ -210,16 +211,18 @@ contract LiquidityPool {
     }
 
     // Function to borrow funds
-    function borrow(uint256 loanAmount, uint256 choiceOfCurrency, uint256 collateralCurrency) public {
+    function borrow(uint256 loanAmount, uint256 choiceOfCurrency) public {
         require(loanAmount > 0, "Loan amount must be greater than 0");
 
         //indicate what type currency u wanna use as collateral
 
         // a. check how much colleteral needed based on currency type
-        uint256 collateralAmountRequired = {} * 1.5;
         // b. check if got enuf of that amt 
-        uint256 collateral = getBorrowerCollateral(collateralCurrency, choiceOfCurrency);
-        require(collateralAmountRequired <= collateral, "Insufficient collateral to borrow");
+        Collateral memory collateral = getBorrowerCollateral(choiceOfCurrency);
+        uint256 collateralAmount = collateral.amount;
+        uint256 collateralCurrency = collateral.collateralCurrencyType;
+
+        require(returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.5, "Insufficient collateral to borrow");
 
         // update borrowers
         if (doesBorrowerExist(msg.sender) == false) {
@@ -286,13 +289,12 @@ contract LiquidityPool {
         emit LoanReturned(msg.sender, choiceOfCurrency, amount);
     }
 
-    function getBorrowerCollateral (uint256 collateralCurrency, uint256 choiceOfCurrency) public view returns (uint256) {
-        uint256 collateral = 0;
+    function getBorrowerCollateral (uint256 choiceOfCurrency) public view returns (Collateral memory collateral) {
+        Collateral memory collateral;
         for (int i = 0; i <= collateralAmounts[msg.sender].length; i++) {
-            if (collateralAmounts[msg.sender][i].currencyType == collateralCurrency 
-                && collateralAmounts[msg.sender][i].collateralCurrencyType == choiceOfCurrency) 
+            if (collateralAmounts[msg.sender][i].collateralCurrencyType == choiceOfCurrency) 
                 {
-                    collateral = collateralAmounts[msg.sender][i].amount;
+                    collateral = collateralAmounts[msg.sender][i];
                 }
         }
         return collateral;
@@ -312,14 +314,18 @@ contract LiquidityPool {
                     interest += (totalLoanAmount * interestRate * monthsElapsed) / 100;
                 }
                 borrow(j, interest);
+
+                Collateral memory collateral = getBorrowerCollateral(j);
+                uint256 collateralAmount = collateral.amount;
+                uint256 collateralCurrency = collateral.currencyType;
+
+                // [Margin Call] 1.2: gives warning
+                if (returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.2) {
+                    emit Log ("WARNING: Collateral ratio has dropped below 1.2! If ratio falls further below 1.05, your collateral will be liquidated!");
+                } else if (returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.05) { // [Margin Call] 1.05: liquidate
+                    liquidateCollateral();
+                }
             }
-        }
-
-        // [Margin Call] 1.2: gives warning
-        if () {
-
-        } else if () { // [Margin Call] 1.05: liquidate
-
         }
         
     }
