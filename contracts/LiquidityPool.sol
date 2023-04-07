@@ -431,15 +431,15 @@ contract LiquidityPool {
 
     function withdrawToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
-            require(cro.checkBalance() >= amt, "Insufficient tokens in pool to withdraw");
+            require(cro.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to withdraw");
             cro.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
-            require(shib.checkBalance() >= amt, "Insufficient tokens in pool to withdraw");
+            require(shib.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to withdraw");
             shib.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
-            require(uni.checkBalance() >= amt, "Insufficient tokens in pool to withdraw");
+            require(uni.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to withdraw");
             uni.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } 
@@ -460,15 +460,15 @@ contract LiquidityPool {
 
     function borrowToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
-            require(cro.checkBalance() >= amt, "Insufficient tokens in pool to borrow");
+            require(cro.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to borrow");
             cro.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
-            require(shib.checkBalance() >= amt, "Insufficient tokens in pool to borrow");
+            require(shib.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to borrow");
             shib.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
-            require(uni.checkBalance() >= amt, "Insufficient tokens in pool to borrow");
+            require(uni.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to borrow");
             uni.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } 

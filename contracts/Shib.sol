@@ -25,6 +25,10 @@ contract Shib {
         return erc20Contract.balanceOf(msg.sender);
     }
 
+    function checkBalance(address user) public view returns(uint256) {
+        return erc20Contract.balanceOf(user);
+    }
+
     function sendToken(address from, address to, uint256 amt) public{   
         erc20Contract.transferFrom(from,to,amt);
     }
