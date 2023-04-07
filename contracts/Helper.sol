@@ -17,8 +17,8 @@ contract Helper {
     Cro cro = new Cro();
     Shib shib = new Shib();
     Uni uni = new Uni();
-    uint256 public platformFee; //in ether
-    uint256 public transactionFee; //in ether
+    uint256 public platformFee = 100; //in ether
+    uint256 public transactionFee = 10; //in ether
     //  constructor() public {
     //     // platformFee = platFee;
     //     // transactionFee = transFee;
@@ -28,17 +28,16 @@ contract Helper {
     //     currentConversion = conversion;
     // }
 
-    // function setPlatformFee(uint256 amt) public {
-    //     platformFee = amt;
-    // }
+    function getPlatformFee(uint256 amt) public returns (uint256) {
+        return platformFee;
+    }
 
-    // function setTransactionFee(uint256 amt) public {
-    //     transactionFee = amt;
-    // }
+    function getTransactionFee(uint256 amt) public returns (uint256) {
+        return transactionFee;
+    }
 
     //before using, check if address to charge has more than the platform fee
     function chargePlatformFee(uint256 choiceOfCurrency, address user, address recipient) public payable {
-        platformFee = 100;
         if(choiceOfCurrency == 0) { 
             uint256 convertedFee = platformFee/100;
             require(cro.checkBalance(user) >= convertedFee, "Insufficient tokens");
@@ -56,7 +55,6 @@ contract Helper {
 
     //before using, check if address to charge has more than the transaction fee
     function chargeTransactionFee(uint256 choiceOfCurrency, address user, address recipient) public payable {
-        transactionFee = 100;
         if(choiceOfCurrency == 0) { 
             uint256 convertedFee = transactionFee/100;
             require(cro.checkBalance(user) >= convertedFee, "Insufficient tokens");
