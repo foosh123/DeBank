@@ -314,7 +314,7 @@ contract LiquidityPool {
         return collateral;
     }
 
-    // Function to deposit collateral
+    // !!!!!!!!!! NEED TO ADD IN !!!!!!!!!!!!!!!!!!!!!!!!
     function depositCollateral (uint256 currencyType, uint256 currencyFor, uint256 amount) public {
         //check if borrowing currency has collateral ctype 
         // Yes 
@@ -343,8 +343,11 @@ contract LiquidityPool {
             c.amount = amount;
             collateralAmounts[msg.sender][currencyFor] = c;
         }
+
+        depositToken(currencyType, amount);
     }
 
+    // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
     // Function to calculate the interest owed on a user's loan for a specified currency
     function calculateLoanInterest(uint256 interestRate) public {
         for (uint i = 0; i < borrowerList.length; i++) {
@@ -367,17 +370,17 @@ contract LiquidityPool {
                 if (returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.2) {
                     emit Log ("WARNING: Collateral ratio has dropped below 1.2! If ratio falls further below 1.05, your collateral will be liquidated!");
                 } else if (returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) <= 1.05) { // [Margin Call] 1.05: liquidate
-                    liquidateCollateral();
+                    liquidateCollateral(i, j);
                 }
             }
         }
         
     }
 
-    // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
     // Function to liquidate collateral when value ratio falls below trashhold
-    function liquidateCollateral() private {
+    function liquidateCollateral(uint256 borrower, uint256 currencyFor) private {
         // [Margin call] If < x1.05, liquidate (move the amount to the pool), and borrowers can keep the loan amount
+        removeCollateralFromCollateralList(collateralAmounts[borrower][currencyFor], currencyFor);
     }
 
     //--------------Helper Methods----------------
@@ -484,6 +487,20 @@ contract LiquidityPool {
         uint index = 0;
         for (uint i = 0; i < arr.length - 1; i++) {
             if (arr[i] == add) {
+                index = i;
+            }
+        }
+        for (uint i = index; i < arr.length - 1; i++) {
+            arr[i] = arr[i+1];
+        }
+        arr.pop();
+    }
+
+    function removeCollateralFromCollateralList(address[] storage arr, uint256 currencyFor) internal {
+        // require(index < arr.length, "Index out of range");
+        uint index = 0;
+        for (uint i = 0; i < arr.length - 1; i++) {
+            if (arr[i].collateralCurrencyType == currencyFor) {
                 index = i;
             }
         }
