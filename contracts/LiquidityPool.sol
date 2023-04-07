@@ -588,7 +588,7 @@ contract LiquidityPool {
         // require(index < arr.length, "Index out of range");
         uint index = -1;
         for (uint i = 0; i < arr.length - 1; i++) {
-            if (aee[i] = add) {
+            if (arr[i] = add) {
                 index = i;
             }
         }
