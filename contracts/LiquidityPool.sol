@@ -210,6 +210,17 @@ contract LiquidityPool {
         return count;
     }
 
+    // Function to get the number of loans made by the user for a specified currency
+    function getLoanCount(address user, uint256 currencyType) public view returns (uint256) {
+        uint256 count = 0;
+        for (uint i = 0; i < loans[user].length; i++) {
+            if (loans[user][i].currencyType == currencyType) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     // Function to borrow funds
     function borrow(uint256 loanAmount, uint256 choiceOfCurrency) public {
         require(loanAmount > 0, "Loan amount must be greater than 0");
