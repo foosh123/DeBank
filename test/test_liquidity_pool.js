@@ -1,3 +1,62 @@
+const _deploy_contracts = require("../migrations/2_deploy_contracts");
+const truffleAssert = require("truffle-assertions");
+// const BigNumber = require('bignumber.js'); // npm install bignumber.js
+var assert = require("assert");
+
+// const oneEth = new BigNumber(1000000000000000000); // 1 eth
+
+
+contract ('DiceMarket', function(accounts){
+    before( async() => {
+        diceInstance = await Dice.deployed();
+        diceMarketInstance = await DiceMarket.deployed();
+    });
+
+    console.log("Testing Dice Market contract");
+
+// create pool * 3
+
+// lend currency
+
+// lend currency with insufficient amount
+
+// withdraw currency with correct interest added
+
+// borrow money with insufficient collateral
+
+// deposit collateral & borrow money 
+
+// margin call warning: collateral < x1.2
+
+// margin call liquidate: collateral < x1.05
+
+})
+
+
+
+
+//1. Borrow [ok]
+//  a. check if enuf collateral
+//2. Return Loan []
+//  a. need to return collateral
+//  b. if all loan is cleared, must remove the Collateral instance from the collateralAmount array (use pop)
+//3. CalculateInterest [ok]
+//  a. check margin risk: warning OR liquidate
+//4. DepositCollateral [ok]
+//5. Liquidate []
+
+
+
+
+
+
+
+
+
+
+
+
+
 // const _deploy_contracts = require("../migrations/2_deploy_contracts");
 // const truffleAssert = require("truffle-assertions");
 // const BigNumber = require('bignumber.js'); // npm install bignumber.js

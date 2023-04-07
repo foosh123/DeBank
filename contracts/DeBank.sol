@@ -109,7 +109,6 @@ contract Debank{
         uni.getToken(amt);
         Users[id].balance -= amt/10;
     }
-
     function convertBackToETH(string memory choiceOfCurrency, uint256 id, uint256 amt) public {
         if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
             require(cro.checkBalance() >= amt, "You dont have enough CRO");
@@ -129,7 +128,7 @@ contract Debank{
         } 
     }
 
-    function returnRatio(uint256 currencyType, uint256 amount, uint256 collateralCurrency, uint256 collateralAmount) public returns (uint256) { 
+    function returnRatio(uint256 currencyType, uint256 amount, uint256 collateralCurrency, uint256 collateralAmount) public view returns (uint256) { 
         if (currencyType == 0) { 
             amount = croRate * amount; 
         } else if (currencyType == 1) { 
@@ -150,3 +149,4 @@ contract Debank{
     }
 
 }
+
