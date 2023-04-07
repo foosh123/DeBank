@@ -329,75 +329,75 @@ contract LiquidityPool {
     // }
 
     //-------------Lender Mentods-----------------------
-    function depositToLiquidityPool(string memory choiceOfCurrency, uint256 depositAmount) public isValidCurrency(choiceOfCurrency) {
+    // function depositToLiquidityPool(string memory choiceOfCurrency, uint256 depositAmount) public isValidCurrency(choiceOfCurrency) {
 
-        liquidityPool storage pool = pools[choiceOfCurrency];
-        uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
+    //     liquidityPool storage pool = pools[choiceOfCurrency];
+    //     uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
 
-        require (depositAmount > 0, "Can't deposit 0 tokens");
+    //     require (depositAmount > 0, "Can't deposit 0 tokens");
 
-        //transfer token to pool
-        depositToken(choiceOfCurrency, depositAmount);
+    //     //transfer token to pool
+    //     depositToken(choiceOfCurrency, depositAmount);
 
-        // uint256 existingAmount = pool.lenders[msg.sender];
-        lenders[poolLoanId][msg.sender] += depositAmount;
-        // pool.lenders[msg.sender] += depositAmount;
+    //     // uint256 existingAmount = pool.lenders[msg.sender];
+    //     lenders[poolLoanId][msg.sender] += depositAmount;
+    //     // pool.lenders[msg.sender] += depositAmount;
 
-        pool.poolAmount += depositAmount;
-        // pool.lenders[msg.sender] = existingAmount;
-        // pool.lendersList.push(msg.sender);
+    //     pool.poolAmount += depositAmount;
+    //     // pool.lenders[msg.sender] = existingAmount;
+    //     // pool.lendersList.push(msg.sender);
 
-        emit DepositMade(msg.sender, choiceOfCurrency, depositAmount);
-    }
+    //     emit DepositMade(msg.sender, choiceOfCurrency, depositAmount);
+    // }
 
-    function withdrawFromLiquidityPool(string memory choiceOfCurrency, uint256 withdrawalAmount) public isValidCurrency(choiceOfCurrency) {
+    // function withdrawFromLiquidityPool(string memory choiceOfCurrency, uint256 withdrawalAmount) public isValidCurrency(choiceOfCurrency) {
 
-        liquidityPool storage pool = pools[choiceOfCurrency];
-        uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
+    //     liquidityPool storage pool = pools[choiceOfCurrency];
+    //     uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
 
-        require (lenders[poolLoanId][msg.sender] >= withdrawalAmount, "Not enough tokens to withdraw");
+    //     require (lenders[poolLoanId][msg.sender] >= withdrawalAmount, "Not enough tokens to withdraw");
 
-        //transfer token to pool
-        withdrawToken(choiceOfCurrency, withdrawalAmount);
+    //     //transfer token to pool
+    //     withdrawToken(choiceOfCurrency, withdrawalAmount);
 
-        lenders[poolLoanId][msg.sender] = lenders[poolLoanId][msg.sender] - withdrawalAmount;
-        pool.poolAmount -= withdrawalAmount;
+    //     lenders[poolLoanId][msg.sender] = lenders[poolLoanId][msg.sender] - withdrawalAmount;
+    //     pool.poolAmount -= withdrawalAmount;
 
-        emit WithdrawalMade(msg.sender, choiceOfCurrency, withdrawalAmount);
-    }
+    //     emit WithdrawalMade(msg.sender, choiceOfCurrency, withdrawalAmount);
+    // }
 
-    //-------------Borrower Mentods-----------------------
-    function borrowFromLiquidityPool(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
+    // //-------------Borrower Mentods-----------------------
+    // function borrowFromLiquidityPool(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
 
-        liquidityPool storage pool = pools[choiceOfCurrency];
-        uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
+    //     liquidityPool storage pool = pools[choiceOfCurrency];
+    //     uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
 
-        require (amt > 0, "Can't borrow 0 tokens");
+    //     require (amt > 0, "Can't borrow 0 tokens");
         
-        //transfer token to pool
-        withdrawToken(choiceOfCurrency, amt);
+    //     //transfer token to pool
+    //     withdrawToken(choiceOfCurrency, amt);
 
-        borrowers[poolLoanId][msg.sender] += amt;
-        pool.poolAmount -= amt;
+    //     borrowers[poolLoanId][msg.sender] += amt;
+    //     pool.poolAmount -= amt;
 
-        emit LoanBorrowed(msg.sender, choiceOfCurrency, amt);
-    }
+    //     emit LoanBorrowed(msg.sender, choiceOfCurrency, amt);
+    // }
 
-    function returnToLiquidityPool(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
+    // function returnToLiquidityPool(string memory choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
 
-        liquidityPool storage pool = pools[choiceOfCurrency];
-        uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
+    //     liquidityPool storage pool = pools[choiceOfCurrency];
+    //     uint256 poolLoanId = getLenderPoolLoanId(choiceOfCurrency);
 
-        require (borrowers[poolLoanId][msg.sender] < amt, "Too many tokens returned");
+    //     require (borrowers[poolLoanId][msg.sender] < amt, "Too many tokens returned");
 
-        //transfer token to pool
-        depositToken(choiceOfCurrency, amt);
+    //     //transfer token to pool
+    //     depositToken(choiceOfCurrency, amt);
 
-        borrowers[poolLoanId][msg.sender] = borrowers[poolLoanId][msg.sender] - amt;
-        pool.poolAmount += amt;
+    //     borrowers[poolLoanId][msg.sender] = borrowers[poolLoanId][msg.sender] - amt;
+    //     pool.poolAmount += amt;
 
-        emit LoanReturned(msg.sender, choiceOfCurrency, amt);
-    }
+    //     emit LoanReturned(msg.sender, choiceOfCurrency, amt);
+    // }
 
     //-----------Pool Token Transfer Methods-----------------
     function depositToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
