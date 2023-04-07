@@ -210,8 +210,13 @@ contract LiquidityPool {
     }
 
     // Function to borrow funds
-    function borrow(uint256 loanAmount, uint256 choiceOfCurrency) public {
+    function borrow(uint256 loanAmount, uint256 choiceOfCurrency, +++) public {
         require(loanAmount > 0, "Loan amount must be greater than 0");
+
+        //indicate what type currency u wanna use as collateral
+
+        // a. check how much colleteral needed based on currency type
+        // b. check if got enuf of that amt 
 
         // update borrowers
         if (doesBorrowerExist(msg.sender) == false) {
