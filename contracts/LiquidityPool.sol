@@ -253,8 +253,8 @@ contract LiquidityPool {
         emit LoanBorrowed(msg.sender, choiceOfCurrency, loanAmount);
     }
 
-    // Function to return borrowed funds
-    function returnFunds(uint256 amount, uint256 choiceOfCurrency) public {
+    // Function to return loan
+    function returnLoan(uint256 amount, uint256 choiceOfCurrency) public {
         require(amount > 0, "Funds returned must be greater than 0");
         require(borrowedAmounts[msg.sender][choiceOfCurrency] <= amount, "Excessive funds returned");
 
@@ -282,6 +282,15 @@ contract LiquidityPool {
         // Return amount to total pool
         pools[choiceOfCurrency].poolAmount += amount;
 
+        // !!!!!!!!!!!!! ADD IN !!!!!!!!!!!!!!!
+        // Return Funds
+            //  a. need to return collateral per ratio
+            //  b. if all loan is cleared, must remove the Collateral instance from the collateralAmount array (use pop)
+        uint256 totalLoanAmount = borrowedAmounts[msg.sender][choiceOfCurrency];
+        if (totalLoanAmount == 0) {
+            removeCollateralFromCollateralList(collateralAmounts[msg.sender][choiceOfCurrency], choiceOfCurrency);
+        }
+
         // Check if all currency balance empty, True -> Remove user
         bool isEmpty = true;
         for (uint i = 0; i < numPools; i++) {
@@ -294,11 +303,6 @@ contract LiquidityPool {
             // delete borrowerList[msg.sender];
             removeUserFromUserList(borrowerList, msg.sender);
         }
-
-        // !!!!!!!!!!!!! ADD IN !!!!!!!!!!!!!!!
-        // Return Funds
-            //  a. need to return collateral per ratio
-            //  b. if all loan is cleared, must remove the Collateral instance from the collateralAmount array (use pop)
 
         emit LoanReturned(msg.sender, choiceOfCurrency, amount);
     }
