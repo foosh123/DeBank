@@ -7,17 +7,10 @@ import "./RNG.sol";
 import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
-// import "./User.sol";
-//import all tokens 1,2,3
 
 // import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract Helper {
-
-    // struct helper {
-    //     uint256 platformFee;
-    //     uint256 transactionFee; 
-    // }
 
     ERC20 erc20Contract;
     RNG r = new RNG();
@@ -47,13 +40,13 @@ contract Helper {
     //before using, check if address to charge has more than the platform fee
     function chargePlatformFee(uint256 choiceOfCurrency, address user, address recipient) public payable {
         if(choiceOfCurrency == 0) { //means its token1
-            // require(user.balance >= platformFee);
+            require(cro.checkBalance(user) >= platformFee, "Insufficient tokens");
             cro.sendToken(user, recipient, platformFee);
         } else if(choiceOfCurrency == 1) {
-            // require(user.balance >= platformFee);
+            require(shib.checkBalance(user) >= platformFee, "Insufficient tokens");
             shib.sendToken(user, recipient, platformFee);  
         } else if(choiceOfCurrency == 2) {
-            // require(user.balance >= platformFee);
+            require(uni.checkBalance(user) >= platformFee, "Insufficient tokens");
             uni.sendToken(user, recipient, platformFee); 
         }
     }
@@ -61,26 +54,26 @@ contract Helper {
     //before using, check if address to charge has more than the transaction fee
     function chargeTransactionFee(int tokenType, address user, address recipient) public payable {
         if(choiceOfCurrency == 0) { //means its token1
-            // require(user.balance >= platformFee);
+            require(cro.checkBalance(user) >= transactionFee, "Insufficient tokens");
             cro.sendToken(user, recipient, transactionFee);
         } else if(choiceOfCurrency == 1) {
-            // require(user.balance >= platformFee);
+            require(shib.checkBalance(user) >= transactionFee, "Insufficient tokens");
             shib.sendToken(user, recipient, transactionFee);  
         } else if(choiceOfCurrency == 2) {
-            // require(user.balance >= platformFee);
+            require(uni.checkBalance(user) >= transactionFee, "Insufficient tokens");
             uni.sendToken(user, recipient, transactionFee); 
         }
     }        
 
     function withdrawFee(uint256 choiceOfCurrency, uint256 amt, address from) public {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
-            require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(cro.checkBalance(from) >= amt, "Insufficient tokens");
             cro.sendToken(from, msg.sender, amt);
         } else if(choiceOfCurrency == 1) {
-            require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(shib.checkBalance(from) >= amt, "Insufficient tokens");
             shib.sendToken(from, msg.sender, amt);
         } else if(choiceOfCurrency == 2) {
-            require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(uni.checkBalance(from) >= amt, "Insufficient tokens");
             uni.sendToken(from, msg.sender, amt);
     }
 
