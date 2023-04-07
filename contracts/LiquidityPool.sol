@@ -283,6 +283,28 @@ contract LiquidityPool {
         emit LoanReturned(msg.sender, choiceOfCurrency, amount);
     }
 
+    // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
+    // Function to calculate the interest owed on a user's loan for a specified currency
+    function calculateLoanInterest(address user, uint256 currencyType) public view returns (uint256) {
+        uint256 totalLoanAmount = borrowedAmounts[user][currencyType];
+        uint256 interest = 0;
+        if (totalLoanAmount > 0) {
+            uint256 timeElapsed = block.timestamp - loans[user][getLoanCount(user, currencyType) - 1].timestamp;
+            uint256 secondsInMonth = 2592000; // assuming 30 days in a month
+            uint256 monthsElapsed = timeElapsed / secondsInMonth;
+            interest += (totalLoanAmount * loans[user][getLoanCount(user, currencyType) - 1].interestRate * monthsElapsed) / 100;
+        }
+        return interest;
+
+        // [Margin Call] 1.2: gives warning
+        // [Margin Call] 1.05: liquidate
+    }
+
+    // Function to liquidate collateral when value ratio falls below trashhold
+    function liquidateCollateral() private {
+        // [Margin call] If < x1.05, liquidate (move the amount to the pool), and borrowers can keep the loan amount
+    }
+
     //--------------Helper Methods----------------
     // Function to check if lender exists
     function doesLenderExist (address lender) private view returns (bool) {
