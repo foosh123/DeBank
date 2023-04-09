@@ -410,13 +410,32 @@ contract LiquidityPool {
                 uint256 totalLoanAmount = borrowedAmounts[borrowerList[i]][j];
                 uint256 interest = 0;
                 if (totalLoanAmount > 0) {
-                    uint256 timeElapsed = block.timestamp - loans[borrowerList[i]][getLoanCount(borrowerList[i], j) - 1].time;
-                    uint256 secondsInMonth = 2592000; // assuming 30 days in a month
-                    uint256 monthsElapsed = timeElapsed / secondsInMonth;
-                    interest += (totalLoanAmount * interestRate * monthsElapsed) / 100;
+                    for (uint k = 0; k < getLoanCount(borrowerList[i], j); k++) {
+                        Loan memory l = loans[borrowerList[i]][k];
+                        if (l.currencyType == j) {
+                            uint256 timeElapsed = block.timestamp - l.time;
+                            uint256 secondsInMonth = 2592000; // assuming 30 days in a month
+                            uint256 monthsElapsed = timeElapsed / secondsInMonth;
+                            interest += (totalLoanAmount * interestRate * monthsElapsed) / 100;
+                        }
+                    }
+                    if (interest > 0) {
+                        // Create a new loan struct and add it to the loans mapping for this user
+                        Loan memory loan = Loan(interest, block.timestamp, getBorrowerInterestRate(j), j);
+                        loans[borrowerList[i]].push(loan);
+
+                        // transfer the token
+                        withdrawToken(j, interest);
+
+                        // Add the loan amount to the user's borrowedAmounts for the specified currency
+                        borrowedAmounts[borrowerList[i]][j] += interest;
+                        // Remove loan amount from total pool
+                        pools[j].poolAmount -= interest;
+
+                        emit LoanBorrowed(borrowerList[i], j, interest);
+                        totalLoanAmount = borrowedAmounts[borrowerList[i]][j];
+                    }
                 }
-                borrow(j, interest);
-                totalLoanAmount = borrowedAmounts[borrowerList[i]][j];
 
                 Collateral memory collateral = getBorrowerCollateral(j);
                 uint256 collateralAmount = collateral.amount;
