@@ -17,14 +17,32 @@ const BigNumber = require('bignumber.js'); // npm install bignumber.js
 const oneEth = new BigNumber(1000000000000000000); // 1 eth
 
 module.exports = (deployer , network, accounts) => {
-    deployer.deploy(Cro);
-    deployer.deploy(Shib);
-    deployer.deploy(Uni);
-    deployer.deploy(DeBank);
-    deployer.deploy(Helper);
-    deployer.deploy(RNG);
+    deployer.deploy(Cro)
+    // deployer.deploy(Shib);
+    // deployer.deploy(Uni);
+    // deployer.deploy(DeBank);
+    // deployer.deploy(Helper);
+    // deployer.deploy(RNG);
 
-    deployer.deploy(SpotOnContract)
+    // deployer.deploy(SpotOnContract)
+    .then(function() {
+        return deployer.deploy(Shib);
+    })
+    .then(function() {
+        return deployer.deploy(Uni);
+    })
+    .then(function() {
+        return deployer.deploy(DeBank);
+    })
+    .then(function() {
+        return deployer.deploy(Helper);
+    })
+    .then(function() {
+        return deployer.deploy(RNG);
+    })
+    .then(function() {
+        return deployer.deploy(SpotOnContract);
+    })
     .then(function(){
         return deployer.deploy(SpotOn, SpotOnContract.address, Cro.address, Shib.address, Uni.address, DeBank.address);
     }).then(function(){

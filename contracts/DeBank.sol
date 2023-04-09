@@ -15,12 +15,21 @@ library DSMath {
 
 contract Debank{
     using DSMath for uint256;
-    Cro cro = new Cro();
+    Cro cro;
     Shib shib = new Shib();
     Uni uni = new Uni();
     uint256 croRate;
     uint256 shibRate;
     uint256 uniRate;
+
+    constructor() public {        
+        Cro c = new Cro();
+        cro = c;
+        Shib s = new Shib();
+        shib = s;
+        Uni u = new Uni();
+        uni = u;
+    }
 
     function initializeCro(uint256 x, uint256 y) public returns (uint256) {
         croRate = x.wdiv(y);

@@ -6,13 +6,13 @@ var assert = require("assert");
 // const oneEth = new BigNumber(1000000000000000000); // 1 eth
 
 
-contract ('DiceMarket', function(accounts){
-    before( async() => {
-        diceInstance = await Dice.deployed();
-        diceMarketInstance = await DiceMarket.deployed();
-    });
+// contract ('DiceMarket', function(accounts){
+//     before( async() => {
+//         diceInstance = await Dice.deployed();
+//         diceMarketInstance = await DiceMarket.deployed();
+//     });
 
-    console.log("Testing Dice Market contract");
+//     console.log("Testing Dice Market contract");
 
 // create pool * 3
 
@@ -30,7 +30,7 @@ contract ('DiceMarket', function(accounts){
 
 // margin call liquidate: collateral < x1.05
 
-})
+// })
 
 
 
