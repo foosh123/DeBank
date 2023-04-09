@@ -14,12 +14,14 @@ contract SpotOn {
     mapping(uint256 => string) currencyTypes;
     RNG r = new RNG();
     Cro cro;
-    Shib shib = new Shib();
-    Uni uni = new Uni();
+    Shib shib = shib;
+    Uni uni = uni;
 
     constructor(SpotOnContract spotOnContractAddress,
-            Cro croContractAddress
-            // Debank debankAddress
+            Cro croContractAddress,
+            Shib shibContractAddress,
+            Uni uniContractAddress,
+            Debank debankAddress
     ) public payable {
         spot_on_contract = spotOnContractAddress;
         // de_bank = debankAddress;
