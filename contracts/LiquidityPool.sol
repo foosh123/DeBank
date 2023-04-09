@@ -141,7 +141,6 @@ contract LiquidityPool {
     // Function to deposit funds
     function deposit(uint256 choiceOfCurrency, uint256 depositAmount, uint256 time) public {// isValidCurrency(choiceOfCurrency) 
         
-        // uint256 platformFee = helperContract.;
         require(depositAmount > 0, "Deposit amount must be greater than 0");
         
         // update lenders
@@ -152,15 +151,15 @@ contract LiquidityPool {
         //transfer the token
         depositToken(choiceOfCurrency, depositAmount);
 
-        // A 0.05% of platform fee will be charged
-        uint256 platformFee = helperContract.getTransactionFeeAmount(choiceOfCurrency);
+        // Each withdrawal will incur a fixed amount of transaction fees based on different token type
+        uint256 transactionFee = helperContract.getTransactionFeeAmount(choiceOfCurrency);
 
         // Create a new deposit struct and add it to the deposits mapping for this user
-        Deposit memory d= Deposit(depositAmount-platformFee, time, choiceOfCurrency);
+        Deposit memory d= Deposit(depositAmount-transactionFee, time, choiceOfCurrency);
         deposits[msg.sender].push(d);
         
         // Add the deposited amount to the user's balance for the specified currency
-        balances[msg.sender][choiceOfCurrency] += (depositAmount-platformFee);
+        balances[msg.sender][choiceOfCurrency] += (depositAmount-transactionFee);
         // Add the deposited amount to total pool
         pools[choiceOfCurrency].poolAmount += depositAmount;
 
@@ -173,11 +172,11 @@ contract LiquidityPool {
         require(balances[msg.sender][choiceOfCurrency] >= amount, "Insufficient balance");
 
         
-        // Each withdrawal will incur a fixed amount of transaction fees {$10 USD}
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // Each withdrawal will incur a fixed amount of transaction fees
+        uint256 transactionFee = helperContract.getTransactionFeeAmount(choiceOfCurrency);
 
         // transfer the token
-        withdrawToken(choiceOfCurrency, amount);
+        withdrawToken(choiceOfCurrency, (amount-transactionFee));
 
         balances[msg.sender][choiceOfCurrency] -= amount;
 
@@ -287,6 +286,7 @@ contract LiquidityPool {
         uint256 collateralAmount = collateral.amount;
         uint256 collateralCurrency = collateral.collateralCurrencyType;
 
+        require(collateralAmount > 0, "Insufficient collateral to borrow");
         require(deBankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) >= DSMath.wdiv(3,2), "Insufficient collateral to borrow");
 
         // update borrowers
@@ -338,7 +338,6 @@ contract LiquidityPool {
         // Return amount to total pool
         pools[choiceOfCurrency].poolAmount += amount;
 
-        // !!!!!!!!!!!!! ADD IN !!!!!!!!!!!!!!!
         // Return Funds
             //  a. need to return collateral per ratio
             //  b. if all loan is cleared, must remove the Collateral instance from the collateralAmount array (use pop)
@@ -365,7 +364,7 @@ contract LiquidityPool {
 
     function getBorrowerCollateral (uint256 choiceOfCurrency) public view returns (Collateral memory) {
         Collateral memory collateral;
-        for (uint i = 0; i <= collateralAmounts[msg.sender].length; i++) {
+        for (uint i = 0; i < collateralAmounts[msg.sender].length; i++) {
             if (collateralAmounts[msg.sender][i].collateralCurrencyType == choiceOfCurrency) 
                 {
                     collateral = collateralAmounts[msg.sender][i];
@@ -374,7 +373,6 @@ contract LiquidityPool {
         return collateral;
     }
 
-    // !!!!!!!!!! NEED TO ADD IN !!!!!!!!!!!!!!!!!!!!!!!!
     function depositCollateral (uint256 currencyType, uint256 currencyFor, uint256 amount) public {
         //check if borrowing currency has collateral ctype 
         // Yes 
@@ -455,7 +453,6 @@ contract LiquidityPool {
         
     }
 
-    // !!!!!!!!!! NEED TO ADD IN risk checking !!!!!!!!!!!!!!!!!!!!!!!!
     // Function to liquidate collateral when value ratio falls below trashhold
     function liquidateCollateral(address borrower, uint256 currencyFor) private {
         // [Margin call] If < x1.05, liquidate (move the amount to the pool), and borrowers can keep the loan amount

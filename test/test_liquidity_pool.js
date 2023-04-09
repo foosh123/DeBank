@@ -18,6 +18,7 @@ contract ('Liquidity Pool', function(accounts){
         shibInstance = await Shib.deployed();
         uniInstance = await Uni.deployed();
         liquidityPoolInstance = await LiquidityPool.deployed();
+        debankInstance = await DeBank.deployed();
         rngInstance = await RNG.deployed();
     });
 
@@ -179,6 +180,11 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(depositAmount.toNumber(), 150, "Get Token Failed");
     });
 
+    // deposit collateral with insufficient amount
+    it('Deposit Collateral for Loan from Liquidity Pool (Alternative: Insufficient Token Amount)', async() => {
+        await truffleAssert.reverts(liquidityPoolInstance.depositCollateral(0,1,150, {from:accounts[4]}), "You dont have enough token to deposit");
+    });
+
     // borrow money with collateral from liquidity pool
     it('Borrower Loan Amount from Liquidity Pool', async() => {
         
@@ -192,7 +198,10 @@ contract ('Liquidity Pool', function(accounts){
 
     // borrow money with insufficient collateral
     it('Borrower Loan Amount from Liquidity Pool (Alternative: Insufficint Collateral)', async() => {
-        //await truffleAssert.reverts(liquidityPoolInstance.borrow(150, 1, {from:accounts[4]}), "Insufficient collateral to borrow");
+        await debankInstance.initializeCro(1,1);
+        await debankInstance.initializeShib(1,1);
+        await debankInstance.initializeUni(1,1);
+        await truffleAssert.reverts(liquidityPoolInstance.borrow(150, 1, {from:accounts[4]}), "Insufficient collateral to borrow");
     });
 
     // calculate interest for borrower
