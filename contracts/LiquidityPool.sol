@@ -47,8 +47,8 @@ contract LiquidityPool {
         uint256 poolAmount;       
         uint256 borrowerInterestRate;
         uint256 lenderInterestRate;
-        address owner;
-        address prevOwner;
+        // address owner;
+        // address prevOwner;
     }
 
     struct Collateral {
@@ -57,7 +57,7 @@ contract LiquidityPool {
         uint256 amount;
     }
 
-    address public owner;
+    address _owner = msg.sender;
     // uint256[] numPools;
     address[] borrowerList;
     address[] lenderList;
@@ -78,11 +78,12 @@ contract LiquidityPool {
     event LogOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Transfered(uint choiceOfCurrency, uint256 amount);
     event Log(string message);
+    event NewLiquidityPoolAdded(string name);
     
 
     //modifier to ensure a function is callable only by its owner    
     modifier ownerOnly() {
-        require(msg.sender == owner);
+        require(msg.sender == _owner);
         _;
     }
 
@@ -99,8 +100,8 @@ contract LiquidityPool {
 
     function transferOwnership(address newOwner) public ownerOnly {
         require(newOwner != address(0));
-        emit LogOwnershipTransferred(owner, newOwner);
-        owner = newOwner;
+        emit LogOwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
     }
 
     // Only owner can create pools
@@ -108,22 +109,27 @@ contract LiquidityPool {
         string memory currencyTypeName
     ) public payable ownerOnly returns(uint256) {
         //require(numberOfSides > 0);
-        //require((msg.value) > 0.00 ether, "Please deposit a minimum amount to initiate a new currency pool");
+        // require((amount) > 0.00 ether, "Please deposit a minimum amount to initiate a new currency pool!");
+        // require(cro.checkBalance() >= amount, "You do not have enought currency token!");
+        require(msg.sender == _owner, "Only Liquidity Pool contract Owner can add new pool");
         
         //new pool object
         liquidityPool memory newLiquidityPool = liquidityPool(
             numPools,
             currencyTypeName,
-            msg.value,     
+            0,     
             0,
-            0,
-            msg.sender,  //owner
-            address(0) //prev owner
+            0
+            // msg.sender,  //owner
+            // address(0) //prev owner
         );
         
         pools[numPools] = newLiquidityPool; //commit to state variable
         // numPools.push(currencyType);
         numPools++;
+        
+        emit NewLiquidityPoolAdded(currencyTypeName);
+        
         return numPools;   //return new poolId
     }
 
@@ -478,6 +484,10 @@ contract LiquidityPool {
     }
 
     //----------getter methods-------------
+    function getContractOwner() public view returns(address) {
+       return _owner;
+    }
+
     function getCurrencyName(uint256 choiceOfCurrency) public view returns (string memory) {
         require (choiceOfCurrency < numPools, "Invalid Currency Type");
         return pools[choiceOfCurrency].currencyTypeName;

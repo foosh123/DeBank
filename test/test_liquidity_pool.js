@@ -4,31 +4,53 @@ var assert = require("assert");
 
 // const BigNumber = require('bignumber.js'); // npm install bignumber.js
 // const oneEth = new BigNumber(1000000000000000000); // 1 eth
+var LiquidityPool = artifacts.require("../contracts/LiquidityPool.sol");
+var DeBank = artifacts.require("../contracts/DeBank.sol");
+var RNG = artifacts.require("../contracts/RNG.sol");
+var Cro = artifacts.require("../contracts/Cro.sol");
+var Shib = artifacts.require("../contracts/Shib.sol");
+var Uni = artifacts.require("../contracts/Uni.sol");
 
 
 contract ('Liquidity Pool', function(accounts){
     before( async() => {
-        diceInstance = await Dice.deployed();
-        diceMarketInstance = await DiceMarket.deployed();
+        croInstance = await Cro.deployed();
+        liquidityPoolInstance = await LiquidityPool.deployed();
     });
 
-    console.log("Testing Dice Market contract");
+    console.log("Testing Liquidity Pool contract");
 
-// create pool * 3
+    // Test the creation of the Liquidity Pool
+    it('Create New Liquidity Pool', async() => {
 
-// lend currency
+        // account[0] initialize new cro pool
+        let newPool_Cro = await liquidityPoolInstance.addNewPool("Cro", {from: accounts[0]});
 
-// lend currency with insufficient amount
+        truffleAssert.eventEmitted(newPool_Cro, 'NewLiquidityPoolAdded');
+    });
 
-// withdraw currency with correct interest added
+    // Test the creation of the Liquidity Pool by non Liquidity Pool contract owner, an error is returned
+    it("Create New Liquidity Pool (Incorrect Liquidity Pool Owner)", async () => {
+        
+        // account[1] initialize new cro pool
+        await truffleAssert.fails(
+            liquidityPoolInstance.addNewPool("Cro", {from: accounts[1]}));
+    });
 
-// borrow money with insufficient collateral
 
-// deposit collateral & borrow money 
+    // lend currency
 
-// margin call warning: collateral < x1.2
+    // lend currency with insufficient amount
 
-// margin call liquidate: collateral < x1.05
+    // withdraw currency with correct interest added
+
+    // borrow money with insufficient collateral
+
+    // deposit collateral & borrow money 
+
+    // margin call warning: collateral < x1.2
+
+    // margin call liquidate: collateral < x1.05
 
 })
 
