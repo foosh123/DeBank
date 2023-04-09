@@ -5,6 +5,7 @@ const Uni = artifacts.require("Uni");
 const Helper = artifacts.require("Helper");
 const DeBank = artifacts.require("DeBank");
 const PriceConsumer = artifacts.require("PriceConsumer");
+const ERC20 = artifacts.require("ERC20");
 const RNG = artifacts.require("RNG");
 const LiquidityPool = artifacts.require("LiquidityPool");
 const SpotOn = artifacts.require("SpotOn");
@@ -31,5 +32,5 @@ module.exports = (deployer , network, accounts) => {
     });
 
     // deployer.deploy(LiquidityPool);
-    deployer.deploy(PriceConsumer);
+    // deployer.deploy(PriceConsumer);
 }

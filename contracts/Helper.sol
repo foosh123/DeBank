@@ -29,11 +29,11 @@ contract Helper {
     //     currentConversion = conversion;
     // }
 
-    function getPlatformFee(uint256 amt) public returns (uint256) {
+    function getPlatformFee(uint256 amt) public view returns (uint256) {
         return platformFee;
     }
 
-    function getTransactionFee(uint256 amt) public returns (uint256) {
+    function getTransactionFee(uint256 amt) public view returns (uint256) {
         return transactionFee;
     }
 
