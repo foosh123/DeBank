@@ -47,6 +47,25 @@ contract('SpotOn', function(accounts) {
         });
     });
 
+    it('Lender Offers Loan', async() => {
+        let loanOffer = await SpotOnInstance.offerLoan(10, 0, 2, 2, 30, 15, 0, {from:accounts[3]});
+        truffleAssert.eventEmitted(loanOffer, "loanOffered");
+        // check accounts[2] is the lender
+        return SpotOnContractInstance.getSpotOnLender(1).then( owner => {
+            assert.equal(owner, accounts[3]);
+        });
+    });
+
+    it('Borrower Takes On Loan', async() => {
+        let loanTaken = await SpotOnInstance.takeOnLoan(1, {from:accounts[4]});
+        truffleAssert.eventEmitted(loanTaken, "loanTaken");
+
+        // check accounts[4] is the borrower that takes up loan
+        return SpotOnContractInstance.getSpotOnBorrower(1).then( owner => {
+            assert.equal(owner, accounts[4]);
+        });
+    });
+
     it('Borrower transfer collateral', async() => {
         //add currency to spotOn
         let addCurrency = await SpotOnInstance.addCurrency("Cro");
@@ -64,24 +83,21 @@ contract('SpotOn', function(accounts) {
         });
     })
 
+
+    // it('Borrower Edits Loan Amount', async() => {
+
+        
+    // });
+
     it("Lender Transfer Money", async() => {
         //add Cro Balance to lender account
         let lenderaddCro = await CroInstance.getToken(15, {from:accounts[2]})
         // lender transfers money
         let lenderTransfers = await SpotOnInstance.transferAmount(0, {from:accounts[2]});
         truffleAssert.eventEmitted(lenderTransfers, "Transferred");
-
     })
 
-    it('Lender Offers Loan', async() => {
-        // send tokens to account...
-        let loanOffer = await SpotOnInstance.offerLoan(10, 0, 2, 2, 30, 15, 0, {from:accounts[3]});
-        truffleAssert.eventEmitted(loanOffer, "loanOffered");
-        // check accounts[2] is the lender
-        return SpotOnContractInstance.getSpotOnLender(1).then( owner => {
-            assert.equal(owner, accounts[3]);
-        });
-    });
+
 
         // if(choiceOfCurrency == 0) { 
         //     Cro.checkBalance(spotOnContractAddress)
@@ -94,9 +110,5 @@ contract('SpotOn', function(accounts) {
         // } 
 
 
-    // it('Borrower Edits Loan Amount', async() => {
-
-        
-    // });
 })
 
