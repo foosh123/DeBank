@@ -26,8 +26,10 @@ module.exports = (deployer , network, accounts) => {
     deployer.deploy(SpotOnContract)
     .then(function(){
         return deployer.deploy(SpotOn, SpotOnContract.address, Cro.address, Shib.address, Uni.address, DeBank.address);
+    }).then(function(){
+        return deployer.deploy(LiquidityPool, DeBank.address, RNG.address, Cro.address, Shib.address, Uni.address, Helper.address);
     });
-    
-    deployer.deploy(LiquidityPool);
+
+    // deployer.deploy(LiquidityPool);
     deployer.deploy(PriceConsumer);
 }

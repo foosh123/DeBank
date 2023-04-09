@@ -1,8 +1,8 @@
 const _deploy_contracts = require("../migrations/2_deploy_contracts");
 const truffleAssert = require("truffle-assertions");
-// const BigNumber = require('bignumber.js'); // npm install bignumber.js
 var assert = require("assert");
 
+// const BigNumber = require('bignumber.js'); // npm install bignumber.js
 // const oneEth = new BigNumber(1000000000000000000); // 1 eth
 
 
@@ -44,18 +44,6 @@ contract ('DiceMarket', function(accounts){
 //  a. check margin risk: warning OR liquidate
 //4. DepositCollateral [ok]
 //5. Liquidate []
-
-
-
-
-
-
-
-
-
-
-
-
 
 // const _deploy_contracts = require("../migrations/2_deploy_contracts");
 // const truffleAssert = require("truffle-assertions");
