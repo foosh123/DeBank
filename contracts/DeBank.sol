@@ -16,8 +16,8 @@ library DSMath {
 contract Debank{
     using DSMath for uint256;
     Cro cro;
-    Shib shib = new Shib();
-    Uni uni = new Uni();
+    Shib shib;
+    Uni uni;
     uint256 croRate;
     uint256 shibRate;
     uint256 uniRate;
