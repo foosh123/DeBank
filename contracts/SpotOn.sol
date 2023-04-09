@@ -33,8 +33,9 @@ contract SpotOn {
     event loanRequested (uint256 spotOnContractId);
     event loanOffered (uint256 spotOnContractId);
     event loanTaken (uint256 spotOnContractId);
-    event Transferred(uint256 choiceOfCurrency, uint amount);
-    event MarginCallTriggered(uint spotOnContractId, uint collateralAmount);
+    event Transferred(uint256 choiceOfCurrency, uint256 amount);
+    event MarginCallTriggered(uint spotOnContractId, uint256 collateralAmount);
+    event collateralTransferred(uint256 choiceOfCurrency, uint256 amount);
     event Log(string addCollateral);
 
     mapping(uint256 => SpotOnContract) public spotOnContracts;  // tracks all loans that have been accepted, to check loanPeriod is valid
@@ -94,6 +95,7 @@ contract SpotOn {
         uint256 interestRate = spot_on_contract.getInterestRate(spotOnContractId);
         spot_on_contract.setRepaymentAmount(spotOnContractId, timeNow, repaymentDate , interestRate, amount);
         
+        emit loanTaken(spotOnContractId);
     }
 
 
@@ -199,16 +201,16 @@ contract SpotOn {
         if(choiceOfCurrency == 0) { 
             require(cro.checkBalance(msg.sender) >= amount, "Insufficient tokens in pool to withdraw");
             cro.sendToken(spotOnContractAddress, amount);
-            emit Transferred(choiceOfCurrency, amount);
+            emit collateralTransferred(choiceOfCurrency, amount);
         } 
         else if(choiceOfCurrency == 1) {
             require(shib.checkBalance(msg.sender) >= amount, "Insufficient tokens in pool to withdraw");
             shib.sendToken(spotOnContractAddress, amount);
-            emit Transferred(choiceOfCurrency, amount);
+            emit collateralTransferred(choiceOfCurrency, amount);
         } else if(choiceOfCurrency == 2) {
             require(uni.checkBalance(msg.sender) >= amount, "Insufficient tokens in pool to withdraw");
             uni.sendToken(spotOnContractAddress, amount);
-            emit Transferred(choiceOfCurrency, amount);
+            emit collateralTransferred(choiceOfCurrency, amount);
         } 
     }
 

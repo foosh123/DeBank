@@ -14,12 +14,13 @@ var Uni = artifacts.require("../contracts/Uni.sol");
 contract('SpotOn', function(accounts) {
     before(async () => {
         SpotOnContractInstance = await SpotOnContract.deployed();
-        SpotOnInstance = await SpotOn.deployed(SpotOnContractInstance.address);
+        SpotOnInstance = await SpotOn.deployed(SpotOnContractInstance.address)
+        CroInstance = await Cro.deployed();
     });
 
     it('Borrower Requests For Loan', async() => {
         // send tokens to account...
-        let loanRequest = await SpotOnInstance.requestLoan(10, 0, 1.5, 1,2, 30, 15, 0, {from:accounts[1]});
+        let loanRequest = await SpotOnInstance.requestLoan(10, 0, 2, 2, 30, 15, 0, {from:accounts[1]});
         truffleAssert.eventEmitted(loanRequest, "loanRequested");
         // check accounts[1] is the borrower
         return SpotOnContractInstance.getSpotOnBorrower(0).then( owner => {
@@ -29,55 +30,73 @@ contract('SpotOn', function(accounts) {
 
     it('Borrower requests with too little collateral', async() => {
         try {
-            let  = await SpotOnInstance.requestLoan(10, 0, 1.5, 1,2, 30, 5, 0, {from:accounts[1]});
+            let  = await SpotOnInstance.requestLoan(10, 0, 2, 2, 30, 5, 0, {from:accounts[1]});
         } catch (e) {
             assert(e.message.includes("collateral must be at least 1.5 times of the amount"))
         }
     });
 
-    it('Lender Offers Loan', async() => {
-        // send tokens to account...
-        let loanOffer = await SpotOnInstance.offerLoan(10, 0, 1.5, 1,2, 30, 15, 0, {from:accounts[2]});
-        truffleAssert.eventEmitted(loanOffer, "loanOffered");
-        // check accounts[2] is the lender
-        return SpotOnContractInstance.getSpotOnLender(1).then( owner => {
+    it('Lender Takes On Loan', async() => {
+        // send tokens to accounts[3] to be lent
+        let loanTaken = await SpotOnInstance.takeOnLoan(0, {from:accounts[2]});
+        truffleAssert.eventEmitted(loanTaken, "loanTaken");
+
+        // check accounts[3] is the lender that takes up loan
+        return SpotOnContractInstance.getSpotOnLender(0).then( owner => {
             assert.equal(owner, accounts[2]);
         });
     });
 
-    it('Lender Takes On Loan', async() => {
-        // send tokens to accounts[3] to be lent
-        let loanTaken = await SpotOnInstance.takeOnLoan(0, {from:accounts[3]});
-        truffleAssert.eventEmitted(loanTaken, "loanTaken");
+    it('Borrower transfer collateral', async() => {
+        //add currency to spotOn
+        let addCurrency = await SpotOnInstance.addCurrency("Cro");
 
-        // check accounts[3] is the lender that takes up loan
-        assert.strictEqual(SpotOnContractInstance.getSpotOnLender(0), accounts[3], "wrong lender");
+        //add Cro Balance to borrower account
+        let borrowerAddCro = await CroInstance.getToken(15, {from:accounts[1]})
 
         // borrower transfers collateral to spotOnContract
-        let deposit = await SpotOnInstance.depositCollateral(0, 15, 0, {from:accounts[1]});
-        let spotOnContractAddress = await SpotOnContractInstance.getSpotOnContractAddress(0);
+        let collateralTransferred = await SpotOnInstance.depositCollateral(0, 15, 0, {from:accounts[1]});
         let collateralAmt = await SpotOnContractInstance.getCollateralAmount(0);
+        truffleAssert.eventEmitted(collateralTransferred, "collateralTransferred");
 
-        if(choiceOfCurrency == 0) { 
-            Cro.checkBalance(spotOnContractAddress)
-            assert.strictEqual(Cro.checkBalance(spotOnContractAddress), collateralAmt, "amount deposited is wrong");
-        } 
-        else if(choiceOfCurrency == 1) {
-            assert.strictEqual(Shib.checkBalance(spotOnContractAddress), collateralAmt, "amount deposited is wrong");
-        } else if(choiceOfCurrency == 2) {
-            assert.strictEqual(Uni.checkBalance(spotOnContractAddress), collateralAmt, "amount deposited is wrong");
-        } 
+        return SpotOnContractInstance.getCollateralAmount(0).then( amount => {
+            assert.equal(amount, 15);
+        });
+    })
 
+    it("Lender Transfer Money", async() => {
+        //add Cro Balance to lender account
+        let lenderaddCro = await CroInstance.getToken(15, {from:accounts[2]})
         // lender transfers money
-        let lenderTransfers = await SpotOnInstance.transferAmount(0, {from:accounts[3]});
+        let lenderTransfers = await SpotOnInstance.transferAmount(0, {from:accounts[2]});
         truffleAssert.eventEmitted(lenderTransfers, "Transferred");
+
+    })
+
+    it('Lender Offers Loan', async() => {
+        // send tokens to account...
+        let loanOffer = await SpotOnInstance.offerLoan(10, 0, 2, 2, 30, 15, 0, {from:accounts[3]});
+        truffleAssert.eventEmitted(loanOffer, "loanOffered");
+        // check accounts[2] is the lender
+        return SpotOnContractInstance.getSpotOnLender(1).then( owner => {
+            assert.equal(owner, accounts[3]);
+        });
     });
 
-    
+        // if(choiceOfCurrency == 0) { 
+        //     Cro.checkBalance(spotOnContractAddress)
+        //     assert.strictEqual(Cro.checkBalance(spotOnContractAddress), collateralAmt, "amount deposited is wrong");
+        // } 
+        // else if(choiceOfCurrency == 1) {
+        //     assert.strictEqual(Shib.checkBalance(spotOnContractAddress), collateralAmt, "amount deposited is wrong");
+        // } else if(choiceOfCurrency == 2) {
+        //     assert.strictEqual(Uni.checkBalance(spotOnContractAddress), collateralAmt, "amount deposited is wrong");
+        // } 
 
-    it('Borrower Edits Loan Amount', async() => {
+
+    // it('Borrower Edits Loan Amount', async() => {
 
         
-    });
+    // });
 })
 

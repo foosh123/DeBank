@@ -32,17 +32,17 @@ contract Debank{
     }
 
     function initializeCro(uint256 x, uint256 y) public returns (uint256) {
-        croRate = x.wdiv(y);
+        croRate = DSMath.wdiv(x,y);
         return croRate;
     }
 
     function initializeShib(uint256 x, uint256 y) public returns (uint256) {
-        shibRate = x.wdiv(y);
+        shibRate = DSMath.wdiv(x,y);
         return shibRate;
     }
 
     function initializeUni(uint256 x, uint256 y) public returns (uint256) {
-        uniRate = x.wdiv(y);
+        uniRate = DSMath.wdiv(x,y);
         return uniRate;
     }
 
