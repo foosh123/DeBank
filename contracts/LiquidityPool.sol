@@ -391,7 +391,7 @@ contract LiquidityPool {
                 require (collateralAmounts[msg.sender][i].currencyType == currencyType, "Invalid Collateral Currency Type");
                 hasCollateral = true;
                 c = collateralAmounts[msg.sender][i];
-            }
+            } //A collateral using B, then I cant use C
         }
         if (hasCollateral) {
             c.amount += amount;
@@ -399,7 +399,7 @@ contract LiquidityPool {
             c.currencyType = currencyType;
             c.collateralCurrencyType = currencyFor;
             c.amount = amount;
-            collateralAmounts[msg.sender][currencyFor] = c;
+            collateralAmounts[msg.sender].push(c);
         }
 
         depositToken(currencyType, amount);
@@ -574,6 +574,10 @@ contract LiquidityPool {
 
     function getLenderDeposits(address Lender) public view returns (Deposit[] memory) {
         return deposits[Lender];
+    }
+
+    function getCollateralAmounts (uint256 index) public view returns (uint256){
+        return collateralAmounts[msg.sender][index].amount;
     }
 
     function removeUserFromUserList(address[] storage arr, address add) internal {

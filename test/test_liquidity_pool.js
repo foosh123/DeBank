@@ -139,16 +139,54 @@ contract ('Liquidity Pool', function(accounts){
         
     });
 
+    // deposit collateral
+    it('Deposit Collateral for Loan from Liquidity Pool', async() => {
+        let getCroToken = await croInstance.getToken(150, {from:accounts[4]});
+        let depositCollateral = await liquidityPoolInstance.depositCollateral(0,1,150, {from:accounts[4]});
+
+        let depositAmount = await liquidityPoolInstance.getCollateralAmounts(0, {from:accounts[4]});
+
+        // let getCroToken = await croInstance.getToken(15, {from:accounts[1]})
+        assert.strictEqual(depositAmount.toNumber(), 150, "Get Token Failed");
+    });
+
+    // borrow money with collateral from liquidity pool
+    it('Borrower Loan Amount from Liquidity Pool', async() => {
+        
+        
+    });
+
     // borrow money with insufficient collateral
+    it('Borrower Loan Amount from Liquidity Pool (Alternative: Insufficint Collateral)', async() => {
+        
+        
+    });
 
-    // deposit collateral & borrow money 
+    // calculate interest for borrower
+    it('Borrower Interest Compounded', async() => {
 
-    // calculate interest for lender
+    });
 
-    // margin call warning: collateral < x1.2
+    // margin call warning: collateral < x1.2 (Triggered by calculate interest)
+    it('Margin Call Warning: Collateral < x1.2 (Triggered by Calculate Interest)', async() => {
 
-    // margin call liquidate: collateral < x1.05
+    });
 
+    // margin call warning: collateral < x1.2 (Triggered by new loan)
+    it('Margin Call Warning: Collateral < x1.2 (Triggered by New Loan)', async() => {
+
+    });
+
+    // margin call liquidate: collateral < x1.05 (Triggered by calculate interest)
+    it('Margin Call Liquidate: Collateral < x1.05 (Triggered by Calculate Interest)', async() => {
+
+    });
+
+    // margin call liquidate: collateral < x1.05 (Triggered by new loan)
+    it('Margin Call Liquidate: Collateral < x1.05 (Triggered by New Loan)', async() => {
+
+    });
+    
 })
 
 
