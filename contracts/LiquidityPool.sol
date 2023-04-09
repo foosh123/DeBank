@@ -444,15 +444,15 @@ contract LiquidityPool {
     //-----------Pool Token Transfer Methods-----------------
     function depositToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
-            require(cro.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(cro.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
             cro.sendToken(msg.sender, address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
-            require(shib.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(shib.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
             shib.sendToken(msg.sender, address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
-            require(uni.checkBalance() >= amt, "You dont have enough token to deposit");
+            require(uni.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
             uni.sendToken(msg.sender, address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } 

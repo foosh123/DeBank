@@ -2,7 +2,7 @@ const _deploy_contracts = require("../migrations/2_deploy_contracts");
 const truffleAssert = require("truffle-assertions");
 var assert = require("assert");
 
-// const BigNumber = require('bignumber.js'); // npm install bignumber.js
+const BigNumber = require('bignumber.js'); // npm install bignumber.js
 // const oneEth = new BigNumber(1000000000000000000); // 1 eth
 var LiquidityPool = artifacts.require("../contracts/LiquidityPool.sol");
 var DeBank = artifacts.require("../contracts/DeBank.sol");
@@ -24,9 +24,9 @@ contract ('Liquidity Pool', function(accounts){
     it('Create New Liquidity Pool', async() => {
 
         // account[0] initialize new cro pool
-        let newPool_Cro = await liquidityPoolInstance.addNewPool("Cro", {from: accounts[0]});
+        let pool_Cro = await liquidityPoolInstance.addNewPool("Cro", {from: accounts[0]});
 
-        truffleAssert.eventEmitted(newPool_Cro, 'NewLiquidityPoolAdded');
+        truffleAssert.eventEmitted(pool_Cro, 'NewLiquidityPoolAdded');
     });
 
     // Test the creation of the Liquidity Pool by non Liquidity Pool contract owner, an error is returned
@@ -37,8 +37,34 @@ contract ('Liquidity Pool', function(accounts){
             liquidityPoolInstance.addNewPool("Cro", {from: accounts[1]}));
     });
 
+    // Test the creation of multiple Liquidity Pools
+    it('Add Multiple Liquidity Pools', async() => {
 
-    // lend currency
+        // account[0] initialize new Shib pool
+        let pool_Shib = await liquidityPoolInstance.addNewPool("Shib", {from: accounts[0]});
+        truffleAssert.eventEmitted(pool_Shib, 'NewLiquidityPoolAdded');
+        
+        let pool_Uni = await liquidityPoolInstance.addNewPool("Uni", {from: accounts[0]});
+        truffleAssert.eventEmitted(pool_Uni, 'NewLiquidityPoolAdded');
+        
+    });
+
+    // Lend currency into Liquidity Pool
+    it('Lender Deposits Amount into Liquidity Pool', async() => {
+
+        let getCroToken = await croInstance.getToken(1000, {from:accounts[1]})
+        
+        // let value = web3.utils.toWei("20000", "finney");
+
+        // let getCroToken = await croInstance.getToken(15, {from: accounts[1], value: value});
+
+        let checkCroToken = await croInstance.checkBalance({from: accounts[1]});
+
+        let lendToCro = await liquidityPoolInstance.deposit(0, 10, {from: accounts[1]});
+
+        truffleAssert.eventEmitted(lendToCro, 'DepositMade');
+        
+    });
 
     // lend currency with insufficient amount
 
@@ -47,6 +73,8 @@ contract ('Liquidity Pool', function(accounts){
     // borrow money with insufficient collateral
 
     // deposit collateral & borrow money 
+
+    // calculate interest for lender
 
     // margin call warning: collateral < x1.2
 
