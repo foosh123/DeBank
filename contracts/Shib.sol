@@ -30,6 +30,11 @@ contract Shib {
         return erc20Contract.balanceOf(user);
     }
 
+    function approveSpender(address spender, uint256 amount) external {
+        // Approve the MyContract contract to spend tokens on behalf of the sender
+        erc20Contract.approve(spender, amount);
+    }
+
     function sendToken(address from, address to, uint256 amt) public{   
         erc20Contract.transferFrom(from,to,amt);
     }

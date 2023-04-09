@@ -28,12 +28,13 @@ contract ('Liquidity Pool', function(accounts){
 
         // account[0] initialize new cro pool
         let pool_Cro = await liquidityPoolInstance.addNewPool("Cro", {from: accounts[0]});
-
+        let getCroToken = await croInstance.getToken(10000, {from:accounts[0]});
+        let sendToCroPool = await liquidityPoolInstance.depositToken(0, 10000, {from:accounts[0]});
         truffleAssert.eventEmitted(pool_Cro, 'NewLiquidityPoolAdded');
     });
 
     // Test the creation of the Liquidity Pool by non Liquidity Pool contract owner, an error is returned
-    it("Create New Liquidity Pool (Incorrect Liquidity Pool Owner)", async () => {
+    it("Create New Liquidity Pool (Alternative: Incorrect Liquidity Pool Owner)", async () => {
         
         // account[1] initialize new cro pool
         await truffleAssert.fails(
@@ -45,9 +46,13 @@ contract ('Liquidity Pool', function(accounts){
 
         // account[0] initialize new Shib pool
         let pool_Shib = await liquidityPoolInstance.addNewPool("Shib", {from: accounts[0]});
+        let getShibToken = await shibInstance.getToken(10000, {from:accounts[0]});
+        let sendToShibPool = await liquidityPoolInstance.depositToken(1, 10000, {from:accounts[0]});
         truffleAssert.eventEmitted(pool_Shib, 'NewLiquidityPoolAdded');
         
         let pool_Uni = await liquidityPoolInstance.addNewPool("Uni", {from: accounts[0]});
+        let getUniToken = await uniInstance.getToken(2000, {from:accounts[0]});
+        let sendToUniPool = await liquidityPoolInstance.depositToken(2, 2000, {from:accounts[0]});
         truffleAssert.eventEmitted(pool_Uni, 'NewLiquidityPoolAdded');
         
     });
@@ -76,7 +81,7 @@ contract ('Liquidity Pool', function(accounts){
     });
 
     // lend currency with insufficient amount
-    it('Lender Deposits Insufficient Amount into Liquidity Pool', async() => {
+    it('Lender Deposits Amount into Liquidity Pool (Alternative: Insufficient Token Amount)', async() => {
 
         let getCroToken = await croInstance.getToken(15, {from:accounts[2]})
 
@@ -91,52 +96,48 @@ contract ('Liquidity Pool', function(accounts){
     // Check if interest was compounded correctly
     it('Lender Interest Compounded', async() => {
 
+        // Get 1500 Shib tokens
         let getShibToken = await shibInstance.getToken(1500, {from:accounts[3]});
 
-        let getShibToken2 = await shibInstance.getToken(1500, {from:accounts[0]});
-        
-        // Deposit 5 Shib tokens
+        // Deposit 500 Shib tokens at Time: 1 March 2023 00:00:00
         let lendToShib = await liquidityPoolInstance.deposit(1, 500, 1677628800, {from: accounts[3]});
 
-        // Deposit 10 Shib tokens
+        // Deposit 1000 Shib tokens at Time: 15 March 2023 00:00:00
         let lendToShib2 = await liquidityPoolInstance.deposit(1, 1000, 1678838400, {from: accounts[3]});
 
         let deposits = await liquidityPoolInstance.getLenderDeposits(accounts[3]);
 
-        // // // Wednesday, 1 March 2023 00:00:00
-        // await liquidityPoolInstance.setDepositTime(deposits[0], new BigNumber (1677628800));
-
-        // // // // Wednesday, 15 March 2023 00:00:00
-        // await liquidityPoolInstance.setDepositTime(deposits[1], new BigNumber (1678838400));
-
-        // Set interest rate as 5%
-        await rngInstance.setRandomNumber (5);
+        // Set Shib interest rate as 5%
+        await rngInstance.setRandomNumber(5);
         await liquidityPoolInstance.setLenderInterestRate(1);
 
         let interestRate = await liquidityPoolInstance.getLenderInterestRate(1);
 
-        // 5% Interest Rate, Current time Saturday, 1 April 2023 00:00:00
+        // Calculate/compound interest at Time: 30 April 2023 00:00:00
+        // Account[3] deposited 500 token: 500 * 2 mo. * 0.05 = 50 token
+        // Account[3] deposited 500 token: 1000 * 1 mo. * 0.05 = 50 token
+        // total deposits + interest as of 30 April 2023 00:00:00: 1500 + 100 = 1600 token
         await liquidityPoolInstance.calculateInterest(interestRate, 1682812800);
-
-        // Check if 
         let balance = await liquidityPoolInstance.getBalance(accounts[3], 1);
-
-        assert.strictEqual(balance.toNumber(), 1600, "Get Token Successful");
-        
+        assert.strictEqual(balance.toNumber(), 1600, "Get Token Failed");
     });
 
-    // // withdraw currency with correct interest added
-    // it('Lender Withdraws Amount from Liquidity Pool (With correct interest added)', async() => {
+    // withdraw currency with correct interest added
+    it('Lender Withdraws Amount from Liquidity Pool (With correct interest added)', async() => {
 
-    //     let getCroToken = await croInstance.getToken(15, {from:accounts[2]})
+        // let currentBalance = await liquidityPoolInstance.getBalance(accounts[3], 1);
 
-    //     let checkCroToken = await croInstance.checkBalance(accounts[2]);
+        // let approve = await liquidityPoolInstance.approveSpender(accounts[3], 1600, {from: liquidityPoolInstance.address});
 
-    //     assert.strictEqual(checkCroToken.toNumber(), 15, "Get Token Successful");
+        // let withDrawToLender = await liquidityPoolInstance.withdraw(1600, 1, {from: accounts[3]});
 
-    //     await truffleAssert.reverts(liquidityPoolInstance.deposit(0, 0, {from: accounts[2]}), "Deposit amount must be greater than 0");
+        // let checkCroToken = await shibInstance.checkBalance({from: accounts[3]});
+
+        // assert.strictEqual(checkCroToken, 1600, "Withdraws Token Failed");
+
+        // await truffleAssert.reverts(liquidityPoolInstance.deposit(0, 0, {from: accounts[2]}), "Deposit amount must be greater than 0");
         
-    // });
+    });
 
     // borrow money with insufficient collateral
 

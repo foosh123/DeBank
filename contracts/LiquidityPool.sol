@@ -171,6 +171,13 @@ contract LiquidityPool {
         require(amount > 0, "Withdrawal amount must be greater than 0");
         require(balances[msg.sender][choiceOfCurrency] >= amount, "Insufficient balance");
 
+        
+        // Each withdrawal will incur a fixed amount of transaction fees {$10 USD}
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        // transfer the token
+        withdrawToken(choiceOfCurrency, amount);
+
         balances[msg.sender][choiceOfCurrency] -= amount;
 
         uint256 withdrawnAmount = amount;
@@ -204,11 +211,6 @@ contract LiquidityPool {
             removeUserFromUserList(lenderList, msg.sender);
         }
 
-        // Each withdrawal will incur a fixed amount of transaction fees {$10 USD}
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        // transfer the token
-        withdrawToken(choiceOfCurrency, amount);
 
         emit WithdrawalMade(msg.sender, choiceOfCurrency, amount);
     }
@@ -238,7 +240,7 @@ contract LiquidityPool {
                         deposits[lenderList[i]].push(d);
 
                         //transfer the token
-                        depositToken(j, interest);
+                        // depositToken(j, interest);
                         
                         // Add the deposited amount to the user's balance for the specified currency
                         balances[lenderList[i]][j] += interest;
@@ -460,6 +462,10 @@ contract LiquidityPool {
     }
 
     //--------------Helper Methods----------------
+    function approveSpender (address spender, uint256 amt) public {
+        shib.approveSpender(spender, amt);
+    }
+
     // Function to check if lender exists
     function doesLenderExist (address lender) private view returns (bool) {
         bool lenderExists = false;
@@ -491,7 +497,6 @@ contract LiquidityPool {
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
             require(shib.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
-            shib.sendToken(address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
             require(uni.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
@@ -507,6 +512,7 @@ contract LiquidityPool {
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
             require(shib.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to withdraw");
+            shib.approveSpender(msg.sender, amt);
             shib.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
