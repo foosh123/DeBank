@@ -140,8 +140,6 @@ contract LiquidityPool {
 
     // Function to deposit funds
     function deposit(uint256 choiceOfCurrency, uint256 depositAmount, uint256 time) public {// isValidCurrency(choiceOfCurrency) 
-        // A 0.05% of platform fee will be charged
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         // uint256 platformFee = helperContract.;
         require(depositAmount > 0, "Deposit amount must be greater than 0");
@@ -151,15 +149,18 @@ contract LiquidityPool {
             lenderList.push(msg.sender);
         }
 
-        // Create a new deposit struct and add it to the deposits mapping for this user
-        Deposit memory d= Deposit(depositAmount, time, choiceOfCurrency);
-        deposits[msg.sender].push(d);
-
         //transfer the token
         depositToken(choiceOfCurrency, depositAmount);
+
+        // A 0.05% of platform fee will be charged
+        uint256 platformFee = helperContract.getTransactionFeeAmount(choiceOfCurrency);
+
+        // Create a new deposit struct and add it to the deposits mapping for this user
+        Deposit memory d= Deposit(depositAmount-platformFee, time, choiceOfCurrency);
+        deposits[msg.sender].push(d);
         
         // Add the deposited amount to the user's balance for the specified currency
-        balances[msg.sender][choiceOfCurrency] += depositAmount;
+        balances[msg.sender][choiceOfCurrency] += (depositAmount-platformFee);
         // Add the deposited amount to total pool
         pools[choiceOfCurrency].poolAmount += depositAmount;
 

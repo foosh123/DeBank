@@ -69,6 +69,16 @@ contract Helper {
             require(uni.checkBalance(user) >= convertedFee, "Insufficient tokens");
             uni.sendToken(user, recipient, convertedFee); 
             }
+    } 
+
+    function getTransactionFeeAmount(uint256 choiceOfCurrency) public pure returns (uint256) {
+        if(choiceOfCurrency == 0) { 
+            return 5;
+        } else if(choiceOfCurrency == 1) {
+            return 10; 
+        } else if(choiceOfCurrency == 2) {
+            return 15;
+        }
     }  
 
     function withdrawFee(uint256 choiceOfCurrency, uint256 amt, address from) public {

@@ -59,24 +59,53 @@ contract ('Liquidity Pool', function(accounts){
 
     // Lend currency into Liquidity Pool
     it('Lender Deposits Amount into Liquidity Pool', async() => {
-
-        let getCroToken = await croInstance.getToken(15, {from:accounts[1]})
-        
-        // let value = web3.utils.toWei("20000", "finney");
-
-        // let getCroToken = await croInstance.getToken(15, {from: accounts[1], value: value});
-
+        // get Cro token from Cro contract
+        let getCroToken = await croInstance.getToken(100, {from:accounts[1]})
         let checkCroToken = await croInstance.checkBalance(accounts[1]);
-
-        assert.strictEqual(checkCroToken.toNumber(), 15, "Get Token Successful");
-
-        let lendToCro = await liquidityPoolInstance.deposit(0, 5, 1677628800, {from: accounts[1]});
-
+        assert.strictEqual(checkCroToken.toNumber(), 100, "Get Token Failed");
+        // deposit Shib token to Cro Pool
+        let lendToCro = await liquidityPoolInstance.deposit(0, 50, 1677628800, {from: accounts[1]});
         truffleAssert.eventEmitted(lendToCro, 'DepositMade');
+        
+        // token balance - transaction fee: 50 - 5 = 45 tokens
+        let ownedCroToken = await liquidityPoolInstance.getBalance(accounts[1], 0);
+        assert.strictEqual(ownedCroToken.toNumber(), 45, "Incorrect Token Balance");
 
+        //leftover token token in account[0]: 100 - 50 = 50 tokens
         let checkCroTokenAgain = await croInstance.checkBalance(accounts[1]);
+        assert.strictEqual(checkCroTokenAgain.toNumber(), 50, "Incorrect Leftover Token Balance");
+        
+    });
 
-        assert.strictEqual(checkCroTokenAgain.toNumber(), 10, "Get Token Successful");
+    // Lend currency into Liquidity Pool
+    it('Lender Deposits Amounts into Multiple Liquidity Pool', async() => {
+
+        // get Shib token from Shib contract
+        let getShibToken = await shibInstance.getToken(100, {from:accounts[1]})
+        let checkShibToken = await shibInstance.checkBalance(accounts[1]);
+        assert.strictEqual(checkShibToken.toNumber(), 100, "Get Token Failed");
+
+        // deposit Shib token to Shib Pool
+        let lendToShib = await liquidityPoolInstance.deposit(1, 100, 1677628800, {from: accounts[1]});
+        truffleAssert.eventEmitted(lendToShib, 'DepositMade');
+
+        // token balance - transaction fee: 100 - 10 = 90 tokens
+        let ownedShibToken = await liquidityPoolInstance.getBalance(accounts[1], 1);
+        assert.strictEqual(ownedShibToken.toNumber(), 90, "Incorrect Token Balance");
+
+
+        // get Uni token from Uni contract
+        let getUnibToken = await uniInstance.getToken(200, {from:accounts[1]})
+        let checkUniToken = await uniInstance.checkBalance(accounts[1]);
+
+        // deposit Uni token to Uni Pool
+        assert.strictEqual(checkUniToken.toNumber(), 200, "Get Token Failed");
+        let lendToUni = await liquidityPoolInstance.deposit(2, 200, 1677628800, {from: accounts[1]});
+        truffleAssert.eventEmitted(lendToUni, 'DepositMade');
+
+        // token balance - transaction fee: 200 - 15 = 185 tokens
+        let ownedUniToken = await liquidityPoolInstance.getBalance(accounts[1], 2);
+        assert.strictEqual(ownedUniToken.toNumber(), 185, "Incorrect Token Balance");
         
     });
 
@@ -87,7 +116,7 @@ contract ('Liquidity Pool', function(accounts){
 
         let checkCroToken = await croInstance.checkBalance(accounts[2]);
 
-        assert.strictEqual(checkCroToken.toNumber(), 15, "Get Token Successful");
+        assert.strictEqual(checkCroToken.toNumber(), 15, "Get Token Failed");
 
         await truffleAssert.reverts(liquidityPoolInstance.deposit(0, 0, 1677628800, {from: accounts[2]}), "Deposit amount must be greater than 0");
         
@@ -97,13 +126,13 @@ contract ('Liquidity Pool', function(accounts){
     it('Lender Interest Compounded', async() => {
 
         // Get 1500 Shib tokens
-        let getShibToken = await shibInstance.getToken(1500, {from:accounts[3]});
+        let getShibToken = await shibInstance.getToken(1520, {from:accounts[3]});
 
         // Deposit 500 Shib tokens at Time: 1 March 2023 00:00:00
-        let lendToShib = await liquidityPoolInstance.deposit(1, 500, 1677628800, {from: accounts[3]});
+        let lendToShib = await liquidityPoolInstance.deposit(1, 510, 1677628800, {from: accounts[3]});
 
         // Deposit 1000 Shib tokens at Time: 15 March 2023 00:00:00
-        let lendToShib2 = await liquidityPoolInstance.deposit(1, 1000, 1678838400, {from: accounts[3]});
+        let lendToShib2 = await liquidityPoolInstance.deposit(1, 1010, 1678838400, {from: accounts[3]});
 
         let deposits = await liquidityPoolInstance.getLenderDeposits(accounts[3]);
 
@@ -114,8 +143,8 @@ contract ('Liquidity Pool', function(accounts){
         let interestRate = await liquidityPoolInstance.getLenderInterestRate(1);
 
         // Calculate/compound interest at Time: 30 April 2023 00:00:00
-        // Account[3] deposited 500 token: 500 * 2 mo. * 0.05 = 50 token
-        // Account[3] deposited 500 token: 1000 * 1 mo. * 0.05 = 50 token
+        // Account[3] deposited 510 token, charged 10 token transaction fee: (510 - 10) * 2 mo. * 0.05 = 50 token
+        // Account[3] deposited 1010 token: (1010 - 10) * 1 mo. * 0.05 = 50 token
         // total deposits + interest as of 30 April 2023 00:00:00: 1500 + 100 = 1600 token
         await liquidityPoolInstance.calculateInterest(interestRate, 1682812800);
         let balance = await liquidityPoolInstance.getBalance(accounts[3], 1);
@@ -156,10 +185,14 @@ contract ('Liquidity Pool', function(accounts){
         
     });
 
+    // borrow money with insufficient loan amount
+    it('Borrower Loan Amount from Liquidity Pool (Alternative: Insufficint Loan Amount)', async() => {
+        await truffleAssert.reverts(liquidityPoolInstance.borrow(0, 1, {from:accounts[4]}), "Loan amount must be greater than 0");
+    });
+
     // borrow money with insufficient collateral
     it('Borrower Loan Amount from Liquidity Pool (Alternative: Insufficint Collateral)', async() => {
-        
-        
+        //await truffleAssert.reverts(liquidityPoolInstance.borrow(150, 1, {from:accounts[4]}), "Insufficient collateral to borrow");
     });
 
     // calculate interest for borrower
