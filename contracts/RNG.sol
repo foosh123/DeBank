@@ -3,13 +3,13 @@ pragma solidity >= 0.5.0;
 
 
 contract RNG{
-    uint8 fakeRandomNumber;
+    uint256 fakeRandomNumber;
 
-    function generateRandonNumber() public view returns (uint8){
+    function generateRandonNumber() public view returns (uint256){
         return fakeRandomNumber;
     }
 
-    function setRandomNumber(uint8 forcedNumber) public{
+    function setRandomNumber(uint256 forcedNumber) public{
          fakeRandomNumber = forcedNumber;
     }
 }

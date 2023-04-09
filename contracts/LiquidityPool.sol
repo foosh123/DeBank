@@ -78,6 +78,7 @@ contract LiquidityPool {
     event LogOwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Transfered(uint choiceOfCurrency, uint256 amount);
     event Log(string message);
+    event Log2(uint256 message);
     event NewLiquidityPoolAdded(string name);
     
 
@@ -138,7 +139,7 @@ contract LiquidityPool {
     }
 
     // Function to deposit funds
-    function deposit(uint256 choiceOfCurrency, uint256 depositAmount) public {// isValidCurrency(choiceOfCurrency) 
+    function deposit(uint256 choiceOfCurrency, uint256 depositAmount, uint256 time) public {// isValidCurrency(choiceOfCurrency) 
         // A 0.05% of platform fee will be charged
         //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
@@ -151,7 +152,7 @@ contract LiquidityPool {
         }
 
         // Create a new deposit struct and add it to the deposits mapping for this user
-        Deposit memory d= Deposit(depositAmount, block.timestamp, choiceOfCurrency);
+        Deposit memory d= Deposit(depositAmount, time, choiceOfCurrency);
         deposits[msg.sender].push(d);
 
         //transfer the token
@@ -213,18 +214,40 @@ contract LiquidityPool {
     }
 
     // Function to calculate interest earned on a user's balance for a specified currency
-    function calculateInterest(uint256 interestRate) public {
+    function calculateInterest(uint256 interestRate, uint256 currentTime) public {
         for (uint i = 0; i < lenderList.length; i++ ) { 
             for (uint j = 0; j < numPools; j++) {
                 uint256 totalBalance = balances[lenderList[i]][j];
                 uint256 interest = 0;
                 if (totalBalance > 0) {
-                    uint256 timeElapsed = block.timestamp - deposits[lenderList[i]][getDepositCount(lenderList[i], j) - 1].time;
-                    uint256 secondsInMonth = 2592000; // assuming 30 days in a month
-                    uint256 monthsElapsed = timeElapsed / secondsInMonth;
-                    interest += (totalBalance * interestRate * monthsElapsed) / 100;
+                    for (uint k = 0; k < getDepositCount(lenderList[i], j); k++) {
+                        Deposit memory d = deposits[lenderList[i]][k];
+                        if (d.currencyType == j) {
+                            uint256 timeElapsed = currentTime - d.time;
+                            uint256 secondsInMonth = 2592000; // assuming 30 days in a month
+                            uint256 monthsElapsed = timeElapsed / secondsInMonth;
+                            interest += (d.amount * interestRate * monthsElapsed) / 100;
+                        }
+                    }
+                    if (interest > 0) {
+                        // deposit(j,interest, currentTime);
+                        // require(depositAmount > 0, "Deposit amount must be greater than 0");
+
+                        // Create a new deposit struct and add it to the deposits mapping for this user
+                        Deposit memory d= Deposit(interest, currentTime, j);
+                        deposits[lenderList[i]].push(d);
+
+                        //transfer the token
+                        depositToken(j, interest);
+                        
+                        // Add the deposited amount to the user's balance for the specified currency
+                        balances[lenderList[i]][j] += interest;
+                        // Add the deposited amount to total pool
+                        pools[j].poolAmount += interest;
+
+                        emit DepositMade(lenderList[i], j, interest);
+                    }
                 }
-                deposit(j,interest);
             }
         }
     }
@@ -445,15 +468,15 @@ contract LiquidityPool {
     function depositToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
             require(cro.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
-            cro.sendToken(msg.sender, address(this), amt);
+            cro.sendToken(address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
             require(shib.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
-            shib.sendToken(msg.sender, address(this), amt);
+            shib.sendToken(address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
             require(uni.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
-            uni.sendToken(msg.sender, address(this), amt);
+            uni.sendToken(address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } 
     }
@@ -483,6 +506,10 @@ contract LiquidityPool {
         pools[choiceOfCurrency].borrowerInterestRate =  r.generateRandonNumber();
     }
 
+    function setDepositTime(Deposit memory d, uint256 timestamp) public {
+        d.time = timestamp;
+    }
+
     //----------getter methods-------------
     function getContractOwner() public view returns(address) {
        return _owner;
@@ -508,7 +535,7 @@ contract LiquidityPool {
     }
 
     // Function to get the user's balance for a specified currency
-    function getBalance(address user, uint256 currencyType) public view returns (uint256) {
+    function getBalance(address user, uint256 currencyType) public view returns (uint256)  {
         return balances[user][currencyType];
     }
 
@@ -518,6 +545,10 @@ contract LiquidityPool {
 
     function getLenderInterestRate(uint choiceOfCurrency) public view returns (uint256) {
         return pools[choiceOfCurrency].lenderInterestRate;
+    }
+
+    function getLenderDeposits(address Lender) public view returns (Deposit[] memory) {
+        return deposits[Lender];
     }
 
     function removeUserFromUserList(address[] storage arr, address add) internal {
