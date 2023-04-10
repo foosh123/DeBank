@@ -33,17 +33,17 @@ contract Debank{
 
     function initializeCro(uint256 x, uint256 y) public returns (uint256) {
         croRate = DSMath.wdiv(x,y);
-        return croRate;
+        return croRate/10**16;
     }
 
     function initializeShib(uint256 x, uint256 y) public returns (uint256) {
         shibRate = DSMath.wdiv(x,y);
-        return shibRate;
+        return shibRate/10**16;
     }
 
     function initializeUni(uint256 x, uint256 y) public returns (uint256) {
         uniRate = DSMath.wdiv(x,y);
-        return uniRate;
+        return uniRate/10**16;
     }
 
     struct user{
@@ -155,7 +155,7 @@ contract Debank{
             collateralAmount = uniRate * collateralAmount;             
         } 
  
-        return collateralAmount.wdiv(amount); 
+        return collateralAmount.wdiv(amount)/10**16; 
     }
 
 }
