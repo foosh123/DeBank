@@ -16,14 +16,39 @@ contract('SpotOn', function(accounts) {
         SpotOnContractInstance = await SpotOnContract.deployed();
         SpotOnInstance = await SpotOn.deployed(SpotOnContractInstance.address)
         CroInstance = await Cro.deployed();
+        DeBankInstance = await DeBank.deployed();
     });
+
+    it('Add Currencies to SpotOn', async() => {
+        //add currency to spotOn
+        let currencyAdded = await SpotOnInstance.addCurrency("Cro");
+        let currencyAdded2 = await SpotOnInstance.addCurrency("Shib");
+        let currencyAdded3 = await SpotOnInstance.addCurrency("Uni");
+        truffleAssert.eventEmitted(currencyAdded, "CurrencyAdded");
+        truffleAssert.eventEmitted(currencyAdded2, "CurrencyAdded");
+        truffleAssert.eventEmitted(currencyAdded3, "CurrencyAdded");
+
+        return SpotOnInstance.getCurrencyNum().then(currencyNum => {
+            assert.equal(currencyNum, 3);
+        });
+
+    })
+
+    it('Initialize CroRate', async() => {
+        let initializeCro = await DeBankInstance.initializeCro(3,2);
+        truffleAssert.eventEmitted(initializeCro, "initializeCroRate");
+
+        return DeBankInstance.getCroRate().then(croRate => {
+            assert.equal(croRate, 150);
+        })
+    })
 
     it('Borrower Requests For Loan', async() => {
         // send tokens to account...
         let loanRequest = await SpotOnInstance.requestLoan(10, 0, 2, 2, 30, 15, 0, {from:accounts[1]});
         truffleAssert.eventEmitted(loanRequest, "loanRequested");
         // check accounts[1] is the borrower
-        return SpotOnContractInstance.getSpotOnBorrower(0).then( owner => {
+        return SpotOnContractInstance.getSpotOnBorrower(0).then(owner => {
             assert.equal(owner, accounts[1]);
         });
     });
@@ -65,29 +90,60 @@ contract('SpotOn', function(accounts) {
             assert.equal(owner, accounts[4]);
         });
     });
+    
+    it('Borrower Edits Loan Amount, Collateral enough', async() => {
+        let editAmount = await SpotOnInstance.editAmount(0, 9, {from:accounts[1]});
+        truffleAssert.eventEmitted(editAmount, "loanAmountEdited");
+
+        return SpotOnContractInstance.getAmount(0).then(amount => {
+            assert.equal(amount, 9);
+        });
+    });
+
+
+    it('Borrower Edits Loan Amount, Out of Acceptable Range', async() => {
+        try {
+            let editAmount = await SpotOnInstance.editAmount(0, 13, {from:accounts[1]});
+        } catch (e) {
+            // console.log(e)
+            assert(e.message.includes("Out of acceptable range"))
+        }
+    });
+
+    it('Borrower Edits Loan Amount, Collateral not enough', async() => {
+        try {
+            let editAmount = await SpotOnInstance.editAmount(0, 11, {from:accounts[1]});
+        } catch (e) {
+            assert(e.message.includes("Please add on to your collateral amount"))
+        }
+    });
+
+    it('Borrower adds on Collateral', async() => {
+        let addAmount = await SpotOnInstance.addCollateral(0, 5, {from:accounts[1]});
+       
+        truffleAssert.eventEmitted(addAmount, "collateralAdded");
+
+        return SpotOnContractInstance.getCollateralAmount(0).then(collateralAmount => {
+            assert.equal(collateralAmount, 20);
+        });   
+    });
 
     it('Borrower transfer collateral', async() => {
-        //add currency to spotOn
-        let addCurrency = await SpotOnInstance.addCurrency("Cro");
-
         //add Cro Balance to borrower account
-        let borrowerAddCro = await CroInstance.getToken(15, {from:accounts[1]})
+        let borrowerAddCro = await CroInstance.getToken(20, {from:accounts[1]})
 
         // borrower transfers collateral to spotOnContract
-        let collateralTransferred = await SpotOnInstance.depositCollateral(0, 15, 0, {from:accounts[1]});
+        let collateralTransferred = await SpotOnInstance.depositCollateral(0, 20, 0, {from:accounts[1]});
         let collateralAmt = await SpotOnContractInstance.getCollateralAmount(0);
         truffleAssert.eventEmitted(collateralTransferred, "collateralTransferred");
 
-        return SpotOnContractInstance.getCollateralAmount(0).then( amount => {
-            assert.equal(amount, 15);
-        });
+        let spotOnContractAddress = await SpotOnContractInstance.getSpotOnContractAddress(0);
+        let spotOnContractBalance = await CroInstance.checkBalance(spotOnContractAddress);
+
+        // console.log(spotOnContractAddress);
+        // console.log(spotOnContractBalance);
+        return assert.equal(spotOnContractBalance, 20)
     })
-
-
-    // it('Borrower Edits Loan Amount', async() => {
-
-        
-    // });
 
     it("Lender Transfer Money", async() => {
         //add Cro Balance to lender account
@@ -97,17 +153,25 @@ contract('SpotOn', function(accounts) {
         truffleAssert.eventEmitted(lenderTransfers, "Transferred");
     })
 
+    // it("Trigger Margin Call", async() => {
+    //     let croRate = await CroInstance.getCroRate();
+    //     let editAmount = await SpotOnInstance.editAmount(0, 10, {from:accounts[1]});
+    //     let triggerMarginCall = await SpotOnInstance.triggerMarginCall(0, croRate);
 
+        
 
-        // if(choiceOfCurrency == 0) { 
-        //     Cro.checkBalance(spotOnContractAddress)
-        //     assert.strictEqual(Cro.checkBalance(spotOnContractAddress), collateralAmt, "amount deposited is wrong");
-        // } 
-        // else if(choiceOfCurrency == 1) {
-        //     assert.strictEqual(Shib.checkBalance(spotOnContractAddress), collateralAmt, "amount deposited is wrong");
-        // } else if(choiceOfCurrency == 2) {
-        //     assert.strictEqual(Uni.checkBalance(spotOnContractAddress), collateralAmt, "amount deposited is wrong");
-        // } 
+    // })
+
+    // it("liquidateCollateral", async() => {
+    //     let spotOnContractAddress = await SpotOnContractInstance.getSpotOnContractAddress(0);
+    //     console.log(spotOnContractAddress);
+    //     let liquidateCollateral = await SpotOnInstance.liquidateCollateral(0, {from:spotOnContractAddress});
+    //     truffleAssert.eventEmitted(liquidateCollateral, "MarginCallTriggered");
+
+    //     return SpotOnContractInstance.getNumberOfClosedContract().then(num => {
+    //         assert.equal(num, 1);
+    //     });
+    // }) 
 
 
 })

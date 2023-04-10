@@ -25,18 +25,21 @@ contract SpotOn {
             Debank debankAddress
     ) public payable {
         spot_on_contract = spotOnContractAddress;
-        // de_bank = debankAddress;
+        de_bank = debankAddress;
         owner = msg.sender;
         cro = croContractAddress;
     }
 
-    event loanRequested (uint256 spotOnContractId);
-    event loanOffered (uint256 spotOnContractId);
-    event loanTaken (uint256 spotOnContractId);
+    event loanRequested(uint256 spotOnContractId);
+    event loanOffered(uint256 spotOnContractId);
+    event loanTaken(uint256 spotOnContractId);
     event Transferred(uint256 choiceOfCurrency, uint256 amount);
+    event CurrencyAdded(uint256 numOfCurrencies);
     event MarginCallTriggered(uint spotOnContractId, uint256 collateralAmount);
     event collateralTransferred(uint256 choiceOfCurrency, uint256 amount);
     event Log(string addCollateral);
+    event loanAmountEdited(uint256 spotOnContractId, uint256 newAmount);
+    event collateralAdded(uint256 spotOnContractId, uint256 amount);
 
     mapping(uint256 => SpotOnContract) public spotOnContracts;  // tracks all loans that have been accepted, to check loanPeriod is valid
     uint256 public numOfLoans = 0;
@@ -65,13 +68,23 @@ contract SpotOn {
     function addCurrency(string memory currencyType) public {
         numCurrencyTypes++;
         currencyTypes[numCurrencyTypes] = currencyType;
+        emit CurrencyAdded(numCurrencyTypes);
     }
 
-    function editAmount(uint256 spotOnContractId, uint256 newAmount) public {
+    function editAmount(uint256 spotOnContractId, uint256 newAmount) public returns(uint256) {
         uint256 acceptableRange = spot_on_contract.getAcceptableRange(spotOnContractId);
         uint256 amount = spot_on_contract.getAmount(spotOnContractId);
-        require(amount - acceptableRange <= newAmount && newAmount <= amount + acceptableRange);
+        require(newAmount <= amount + acceptableRange, "Out of acceptable range");
+
+        uint256 currencyType = spot_on_contract.getCurrencyType(spotOnContractId);
+        uint256 collateralCurrency = spot_on_contract.getCollateralCurrency(spotOnContractId);
+        uint256 collateralAmount = spot_on_contract.getCollateralAmount(spotOnContractId);
+        uint256 ratio = de_bank.returnRatio(currencyType, amount, collateralCurrency, collateralAmount);
+        require(ratio >= 150, "Please add on to your collateral amount");
         spot_on_contract.setAmount(spotOnContractId, newAmount);
+
+        emit loanAmountEdited(spotOnContractId, newAmount);
+        return newAmount;
     }
 
     function takeOnLoan(uint256 spotOnContractId) public payable {
@@ -121,8 +134,8 @@ contract SpotOn {
     }
 
 
-    function triggerMarginCall (uint256 spotOnContractId) public {
-        uint256 amount = spot_on_contract.getAmount(spotOnContractId);
+    function triggerMarginCall (uint256 spotOnContractId, uint256 rate) public {
+        uint256 amount = spot_on_contract.getAmount(spotOnContractId)**rate/100;
         uint256 currencyType = spot_on_contract.getCurrencyType(spotOnContractId);
         uint256 collateralAmount = spot_on_contract.getCollateralAmount(spotOnContractId);
         uint256 collateralCurrency = spot_on_contract.getCollateralCurrency(spotOnContractId);
@@ -137,7 +150,7 @@ contract SpotOn {
     }
 
     function liquidateCollateral(uint256 spotOnContractId) public {
-        uint256 recoverCollateral = address(this).balance;
+        uint256 recoverCollateral = cro.checkBalance(address(this));
         address lender = spot_on_contract.getSpotOnLender(spotOnContractId);
 
         uint256 collateralCurrency = spot_on_contract.getCollateralCurrency(spotOnContractId);
@@ -145,15 +158,18 @@ contract SpotOn {
         if (collateralCurrency == 0) {
             cro.sendToken(lender, collateralAmount);
         } else if (collateralCurrency == 1) {
-            shib.sendToken(address(this), lender, collateralAmount);
+            shib.sendToken(lender, collateralAmount);
         } else if (collateralCurrency == 2) {
-            uni.sendToken(address(this), lender, collateralAmount);
+            uni.sendToken( lender, collateralAmount);
         } 
         emit MarginCallTriggered(spotOnContractId, recoverCollateral);
     }
 
-    function addCollateral(uint256 spotOnContractId, uint256 amount) public {
-        spot_on_contract.addCollateral(spotOnContractId, amount);
+    function addCollateral(uint256 spotOnContractId, uint256 addedAmount) public {
+        uint256 amount = spot_on_contract.getCollateralAmount(spotOnContractId);
+        uint256 newAmount = addedAmount + amount;
+        spot_on_contract.setCollateral(spotOnContractId, newAmount);
+        emit collateralAdded(spotOnContractId, addedAmount);
     }
 
     function offerLoan(
@@ -216,5 +232,9 @@ contract SpotOn {
 
     function getTimeStamp() public view returns(uint) {
         return block.timestamp;
+    }
+
+    function getCurrencyNum() public view returns(uint256) {
+        return numCurrencyTypes;
     }
 }

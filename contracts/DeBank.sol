@@ -31,18 +31,25 @@ contract Debank{
         uni = u;
     }
 
+    event initializeCroRate(uint256 CroRate);
+    event initializeShibRate(uint256 ShibRate);
+    event initializeUniRate(uint256 UniRate);
+
     function initializeCro(uint256 x, uint256 y) public returns (uint256) {
-        croRate = DSMath.wdiv(x,y);
+        croRate = DSMath.wdiv(x,y)/10**16;
+        emit initializeCroRate(croRate);
         return croRate;
     }
 
     function initializeShib(uint256 x, uint256 y) public returns (uint256) {
-        shibRate = DSMath.wdiv(x,y);
+        shibRate = DSMath.wdiv(x,y)/10**16;
+        emit initializeCroRate(shibRate);
         return shibRate;
     }
 
     function initializeUni(uint256 x, uint256 y) public returns (uint256) {
-        uniRate = DSMath.wdiv(x,y);
+        uniRate = DSMath.wdiv(x,y)/10**16;
+        emit initializeCroRate(uniRate);
         return uniRate;
     }
 
@@ -155,7 +162,11 @@ contract Debank{
             collateralAmount = uniRate * collateralAmount;             
         } 
  
-        return collateralAmount.wdiv(amount); 
+        return collateralAmount.wdiv(amount)/10**16; 
+    }
+
+    function getCroRate() public view returns(uint256) {
+        return croRate;
     }
 
 }
