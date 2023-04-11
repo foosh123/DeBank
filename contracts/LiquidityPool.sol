@@ -277,7 +277,7 @@ contract LiquidityPool {
     }
 
     // Function to borrow funds
-    function borrow(uint256 loanAmount, uint256 choiceOfCurrency) public {
+    function borrow(uint256 loanAmount, uint256 choiceOfCurrency, uint256 time) public {
         require(loanAmount > 0, "Loan amount must be greater than 0");
 
         // a. check how much colleteral needed based on currency type
@@ -295,7 +295,7 @@ contract LiquidityPool {
         }
 
         // Create a new loan struct and add it to the loans mapping for this user
-        Loan memory loan = Loan(loanAmount, block.timestamp, getBorrowerInterestRate(choiceOfCurrency), choiceOfCurrency);
+        Loan memory loan = Loan(loanAmount, time, getBorrowerInterestRate(choiceOfCurrency), choiceOfCurrency);
         loans[msg.sender].push(loan);
 
         // transfer the token
@@ -405,7 +405,7 @@ contract LiquidityPool {
     }
 
     // Function to calculate the interest owed on a user's loan for a specified currency
-    function calculateLoanInterest(uint256 interestRate) public {
+    function calculateLoanInterest(uint256 currentTime) public {
         for (uint i = 0; i < borrowerList.length; i++) {
             for (uint j = 0; j < numPools; j++) {
                 uint256 totalLoanAmount = borrowedAmounts[borrowerList[i]][j];
@@ -414,15 +414,15 @@ contract LiquidityPool {
                     for (uint k = 0; k < getLoanCount(borrowerList[i], j); k++) {
                         Loan memory l = loans[borrowerList[i]][k];
                         if (l.currencyType == j) {
-                            uint256 timeElapsed = block.timestamp - l.time;
+                            uint256 timeElapsed = currentTime - l.time;
                             uint256 secondsInMonth = 2592000; // assuming 30 days in a month
                             uint256 monthsElapsed = timeElapsed / secondsInMonth;
-                            interest += (totalLoanAmount * interestRate * monthsElapsed) / 100;
+                            interest += (totalLoanAmount * getBorrowerInterestRate(j) * monthsElapsed) / 100;
                         }
                     }
                     if (interest > 0) {
                         // Create a new loan struct and add it to the loans mapping for this user
-                        Loan memory loan = Loan(interest, block.timestamp, getBorrowerInterestRate(j), j);
+                        Loan memory loan = Loan(interest, currentTime, getBorrowerInterestRate(j), j);
                         loans[borrowerList[i]].push(loan);
 
                         // transfer the token
@@ -443,9 +443,9 @@ contract LiquidityPool {
                 uint256 collateralCurrency = collateral.currencyType;
 
                 // [Margin Call] 1.2: gives warning
-                if (deBankContract.returnRatio(j, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(6,5)) {
+                if (deBankContract.returnRatio(j, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(6,5)/10**16) {
                     emit Log ("WARNING: Collateral ratio has dropped below 1.2! If ratio falls further below 1.05, your collateral will be liquidated!");
-                } else if (deBankContract.returnRatio(j, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(21,20)) { // [Margin Call] 1.05: liquidate
+                } else if (deBankContract.returnRatio(j, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(21,20)/10**16) { // [Margin Call] 1.05: liquidate
                     liquidateCollateral(borrowerList[i], j);
                 }
             }
