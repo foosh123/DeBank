@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity >= 0.5.0;
 
 //first need to approve the address of spender 
@@ -119,11 +118,11 @@ contract ERC20 {
   function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     require(_to != address(0));
     require(_value <= balances[_from], "From doesn't have enough balance");
-    require(_value <= allowed[_from][tx.origin], "Not allowed to spend this much");
+    // require(_value <= allowed[_from][tx.origin], "Not allowed to spend this much");
 
     balances[_from] = balances[_from].sub(_value);
     balances[_to] = balances[_to].add(_value);
-    allowed[_from][tx.origin] = allowed[_from][tx.origin].sub(_value);
+    // allowed[_from][tx.origin] = allowed[_from][tx.origin].sub(_value);
     emit Transfer(_from, _to, _value);
     return true;
   }

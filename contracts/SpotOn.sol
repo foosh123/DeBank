@@ -37,7 +37,7 @@ contract SpotOn {
     event CurrencyAdded(uint256 numOfCurrencies);
     event MarginCallTriggered(uint spotOnContractId, uint256 collateralAmount);
     event collateralTransferred(uint256 choiceOfCurrency, uint256 amount);
-    event Log(string addCollateral);
+    event warningCollateralLow(string addCollateral);
     event loanAmountEdited(uint256 spotOnContractId, uint256 newAmount);
     event collateralAdded(uint256 spotOnContractId, uint256 amount);
 
@@ -79,7 +79,7 @@ contract SpotOn {
         uint256 currencyType = spot_on_contract.getCurrencyType(spotOnContractId);
         uint256 collateralCurrency = spot_on_contract.getCollateralCurrency(spotOnContractId);
         uint256 collateralAmount = spot_on_contract.getCollateralAmount(spotOnContractId);
-        uint256 ratio = de_bank.returnRatio(currencyType, amount, collateralCurrency, collateralAmount);
+        uint256 ratio = de_bank.returnRatio(currencyType, newAmount, collateralCurrency, collateralAmount);
         require(ratio >= 150, "Please add on to your collateral amount");
         spot_on_contract.setAmount(spotOnContractId, newAmount);
 
@@ -120,56 +120,68 @@ contract SpotOn {
         uint256 choiceOfCurrency = spot_on_contract.getCurrencyType(spotOnContractId);
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
             // require(cro.checkBalance(address(this)) >= amount, "Insufficient tokens in pool to withdraw");
-            cro.sendToken(borrower, amount);
+            cro.sendToken(lender,borrower, amount);
             emit Transferred(choiceOfCurrency, amount);
         } else if(choiceOfCurrency == 1) {
             // require(shib.checkBalance(address(this)) >= amount, "Insufficient tokens in pool to withdraw");
-            shib.sendToken(borrower, amount);
+            shib.sendToken(lender, borrower, amount);
             emit Transferred(choiceOfCurrency, amount);
         } else if(choiceOfCurrency == 2) {
             // require(uni.checkBalance(address(this)) >= amount, "Insufficient tokens in pool to withdraw");
-            uni.sendToken(borrower, amount);
+            uni.sendToken(lender, borrower, amount);
             emit Transferred(choiceOfCurrency, amount);
         } 
     }
 
 
-    function triggerMarginCall (uint256 spotOnContractId, uint256 rate) public {
-        uint256 amount = spot_on_contract.getAmount(spotOnContractId)**rate/100;
+    function triggerMarginCall (uint256 spotOnContractId, uint256 newAmount) public returns(uint256) {
         uint256 currencyType = spot_on_contract.getCurrencyType(spotOnContractId);
-        uint256 collateralAmount = spot_on_contract.getCollateralAmount(spotOnContractId);
+        address spotOnContractAddress = spot_on_contract.getSpotOnContractAddress(0);
+        uint256 collateralBalance = cro.checkBalance(spotOnContractAddress);
         uint256 collateralCurrency = spot_on_contract.getCollateralCurrency(spotOnContractId);
         
-        uint256 ratio = de_bank.returnRatio(currencyType, amount, collateralCurrency, collateralAmount);
+        uint256 ratio = de_bank.returnRatio(currencyType, newAmount, collateralCurrency, collateralBalance);
 
-        if (ratio <= DSMath.wdiv(21, 20)) {
+        if (ratio <= 105) {
             liquidateCollateral(spotOnContractId);
-        } else if (ratio <= DSMath.wdiv(3,2)) {
-            emit Log("Please add on to your collateral");
+        } else if (ratio <= 150) {
+            emit warningCollateralLow("Please add on to your collateral");
         }
+        return ratio;
     }
 
     function liquidateCollateral(uint256 spotOnContractId) public {
-        uint256 recoverCollateral = cro.checkBalance(address(this));
+        address spotOnContractAddress = spot_on_contract.getSpotOnContractAddress(spotOnContractId);
+        uint256 recoverCollateral = cro.checkBalance(spotOnContractAddress);
         address lender = spot_on_contract.getSpotOnLender(spotOnContractId);
 
         uint256 collateralCurrency = spot_on_contract.getCollateralCurrency(spotOnContractId);
         uint256 collateralAmount = spot_on_contract.getCollateralAmount(spotOnContractId);
+
+        
         if (collateralCurrency == 0) {
-            cro.sendToken(lender, collateralAmount);
+            cro.sendToken(spotOnContractAddress, lender, collateralAmount);
         } else if (collateralCurrency == 1) {
-            shib.sendToken(lender, collateralAmount);
+            shib.sendToken(spotOnContractAddress, lender, collateralAmount);
         } else if (collateralCurrency == 2) {
-            uni.sendToken( lender, collateralAmount);
+            uni.sendToken(spotOnContractAddress, lender, collateralAmount);
         } 
         emit MarginCallTriggered(spotOnContractId, recoverCollateral);
     }
 
-    function addCollateral(uint256 spotOnContractId, uint256 addedAmount) public {
-        uint256 amount = spot_on_contract.getCollateralAmount(spotOnContractId);
-        uint256 newAmount = addedAmount + amount;
-        spot_on_contract.setCollateral(spotOnContractId, newAmount);
-        emit collateralAdded(spotOnContractId, addedAmount);
+    function addCollateral(uint256 spotOnContractId, uint256 amount) public {
+        uint256 collateralCurrency = spot_on_contract.getCollateralCurrency(spotOnContractId);
+        address spotOnContractAddress = spot_on_contract.getSpotOnContractAddress(spotOnContractId);
+        address borrower = spot_on_contract.getSpotOnBorrower(spotOnContractId);
+        if (collateralCurrency == 0) {
+            cro.sendToken(borrower, spotOnContractAddress, amount);
+        } else if (collateralCurrency == 1) {
+            shib.sendToken(borrower, spotOnContractAddress, amount);
+        } else if (collateralCurrency == 2) {
+            uni.sendToken(borrower, spotOnContractAddress, amount);
+        } 
+        spot_on_contract.addCollateral(spotOnContractId, amount);
+        emit collateralAdded(spotOnContractId, amount);
     }
 
     function offerLoan(

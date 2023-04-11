@@ -73,10 +73,6 @@ contract SpotOnContract {
         return activeSpotOnContracts[spotOnContractId].acceptableRange;
     }
 
-    function getNumberOfClosedContracts() public view returns(uint256) {
-        return numOfClosedContracts;
-    }
-
     function createContract(
         uint256 amount,
         uint256 currency,
@@ -135,8 +131,8 @@ contract SpotOnContract {
         activeSpotOnContracts[spotOnContractId].amount = newAmount;
     }
 
-    function setCollateral(uint256 spotOnContractId, uint256 collateralAmount) public {
-        activeSpotOnContracts[spotOnContractId].collateral = collateralAmount;
+    function addCollateral(uint256 spotOnContractId, uint256 collateralAmount) public {
+        activeSpotOnContracts[spotOnContractId].collateral += collateralAmount;
     }
 
 }
