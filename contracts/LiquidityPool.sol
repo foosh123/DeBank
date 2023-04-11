@@ -286,8 +286,8 @@ contract LiquidityPool {
         uint256 collateralAmount = collateral.amount;
         uint256 collateralCurrency = collateral.collateralCurrencyType;
 
-        require(collateralAmount > 0, "Insufficient collateral to borrow");
-        require(deBankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) >= DSMath.wdiv(3,2), "Insufficient collateral to borrow");
+        require(collateralAmount > 0, "Insufficient collateral to borrow 1");
+        require(deBankContract.returnRatio(choiceOfCurrency, loanAmount, collateralCurrency, collateralAmount) >= DSMath.wdiv(3,2)/10**16, "Insufficient collateral to borrow 2");
 
         // update borrowers
         if (doesBorrowerExist(msg.sender) == false) {
@@ -491,14 +491,17 @@ contract LiquidityPool {
     function depositToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
             require(cro.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
-            cro.sendToken(address(this), amt);
+            cro.sendToken(msg.sender, address(this), amt);
+            // cro.sendToken(address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
             require(shib.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
+            shib.sendToken(msg.sender, address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
             require(uni.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
-            uni.sendToken(address(this), amt);
+            uni.sendToken(msg.sender, address(this), amt);
+            // uni.sendToken(address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } 
     }

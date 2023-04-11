@@ -43,13 +43,13 @@ contract Debank{
 
     function initializeShib(uint256 x, uint256 y) public returns (uint256) {
         shibRate = DSMath.wdiv(x,y)/10**16;
-        emit initializeCroRate(shibRate);
+        emit initializeShibRate(shibRate);
         return shibRate;
     }
 
     function initializeUni(uint256 x, uint256 y) public returns (uint256) {
         uniRate = DSMath.wdiv(x,y)/10**16;
-        emit initializeCroRate(uniRate);
+        emit initializeUniRate(uniRate);
         return uniRate;
     }
 
