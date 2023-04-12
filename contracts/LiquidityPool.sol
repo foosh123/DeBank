@@ -222,12 +222,13 @@ contract LiquidityPool {
         for (uint i = 0; i < lenderList.length; i++ ) {
             address lender = lenderList[i];
             for (uint j = 0; j < numPools; j++) {
-                uint256 totalBalance = balances[lender][j];
+                uint256 choiceOfCurrency = j;
+                uint256 totalBalance = balances[lender][choiceOfCurrency];
                 uint256 interest = 0;
                 if (totalBalance > 0) {
-                    for (uint k = 0; k < getDepositCount(lender, j); k++) {
+                    for (uint k = 0; k < getDepositCount(lender, choiceOfCurrency); k++) {
                         Deposit memory d = deposits[lender][k];
-                        if (d.currencyType == j) {
+                        if (d.currencyType == choiceOfCurrency) {
                             uint256 timeElapsed = currentTime - d.time;
                             uint256 secondsInMonth = 2592000; // assuming 30 days in a month
                             uint256 monthsElapsed = timeElapsed / secondsInMonth;
@@ -239,18 +240,18 @@ contract LiquidityPool {
                         // require(depositAmount > 0, "Deposit amount must be greater than 0");
 
                         // Create a new deposit struct and add it to the deposits mapping for this user
-                        Deposit memory d= Deposit(interest, currentTime, j);
+                        Deposit memory d= Deposit(interest, currentTime, choiceOfCurrency);
                         deposits[lender].push(d);
 
                         //transfer the token
                         // depositToken(j, interest);
                         
                         // Add the deposited amount to the user's balance for the specified currency
-                        balances[lender][j] += interest;
+                        balances[lender][choiceOfCurrency] += interest;
                         // Add the deposited amount to total pool
-                        pools[j].poolAmount += interest;
+                        pools[choiceOfCurrency].poolAmount += interest;
 
-                        emit DepositMade(lender, j, interest);
+                        emit DepositMade(lender, choiceOfCurrency, interest);
                     }
                 }
             }
@@ -413,59 +414,62 @@ contract LiquidityPool {
     // Function to calculate the interest owed on a user's loan for a specified currency
     function calculateLoanInterest(uint256 currentTime) public {
         for (uint i = 0; i < borrowerList.length; i++) {
+            address borrower = borrowerList[i];
             for (uint j = 0; j < numPools; j++) {
-                uint256 totalLoanAmount = borrowedAmounts[borrowerList[i]][j];
+                uint256 choiceOfCurrency = j;
+                uint256 totalLoanAmount = borrowedAmounts[borrower][choiceOfCurrency];
                 uint256 interest = 0;
                 if (totalLoanAmount > 0) {
-                    for (uint k = 0; k < getLoanCount(borrowerList[i], j); k++) {
-                        Loan memory l = loans[borrowerList[i]][k];
-                        if (l.currencyType == j) {
+                    for (uint k = 0; k < getLoanCount(borrower, choiceOfCurrency); k++) {
+                        Loan memory l = loans[borrower][k];
+                        if (l.currencyType == choiceOfCurrency) {
                             uint256 timeElapsed = currentTime - l.time;
                             uint256 secondsInMonth = 2592000; // assuming 30 days in a month
                             uint256 monthsElapsed = timeElapsed / secondsInMonth;
 
-                            interest += (totalLoanAmount * getBorrowerInterestRate(j) * monthsElapsed) / 100;
+                            interest += (totalLoanAmount * getBorrowerInterestRate(choiceOfCurrency) * monthsElapsed) / 100;
                         }
                     }
                     if (interest > 0) {
                         // Create a new loan struct and add it to the loans mapping for this user
-                        Loan memory loan = Loan(interest, currentTime, j);
-                        loans[borrowerList[i]].push(loan);
+                        Loan memory loan = Loan(interest, currentTime, choiceOfCurrency);
+                        loans[borrower].push(loan);
 
                         // transfer the token
-                        withdrawToken(j, interest);
+                        withdrawToken(choiceOfCurrency, interest);
 
                         // Add the loan amount to the user's borrowedAmounts for the specified currency
-                        borrowedAmounts[borrowerList[i]][j] += interest;
+                        borrowedAmounts[borrower][choiceOfCurrency] += interest;
                         // Remove loan amount from total pool
-                        pools[j].poolAmount -= interest;
+                        pools[choiceOfCurrency].poolAmount -= interest;
 
-                        emit LoanBorrowed(borrowerList[i], j, interest);
-                        totalLoanAmount = borrowedAmounts[borrowerList[i]][j];
+                        emit LoanBorrowed(borrower, choiceOfCurrency, interest);
+                        totalLoanAmount = borrowedAmounts[borrower][choiceOfCurrency];
                     }
-                    Collateral memory collateral = getBorrowerCollateral(j, borrowerList[i]); //msg.sender
-                    uint256 collateralAmount = collateral.amount;
-                    uint256 collateralCurrency = collateral.currencyType;
-
-                    require(totalLoanAmount > 0, "total Loan Amount must be more than 0");
-
-                    if (deBankContract.returnRatio(j, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(21,20)/10**16) { // [Margin Call] 1.05: liquidate
-                        liquidateCollateral(borrowerList[i], j);
-                        emit CollateralLiquidated (borrowerList[i], j);
-                    } else if (deBankContract.returnRatio(j, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(6,5)/10**16) { // [Margin Call] 1.2: gives warning
-                        emit Log ("WARNING: Collateral ratio has dropped below 1.2! If ratio falls further below 1.05, your collateral will be liquidated!");
-                        emit MarginCallWarningSent (borrowerList[i], j);
-                    } 
+                    marginCall (borrower, choiceOfCurrency, totalLoanAmount);
                 }
             }
         }
         
     }
 
-    // function marginCall ( x, y, currencyType) public {
-    // // go through borrowerList, get the currency loan, check against the collateral using rate x, y
-    // // margin call OR liquidate accordingly 
-    // }
+    function marginCall (address borrower, uint256 choiceOfCurrency, uint256 totalLoanAmount) public {
+        // go through borrowerList, get the currency loan, check against the collateral using rate x, y
+        // margin call OR liquidate accordingly 
+        Collateral memory collateral = getBorrowerCollateral(choiceOfCurrency, borrower); //msg.sender
+        uint256 collateralAmount = collateral.amount;
+        uint256 collateralCurrency = collateral.currencyType;
+
+        require(totalLoanAmount > 0, "total Loan Amount must be more than 0");
+
+        if (deBankContract.returnRatio(choiceOfCurrency, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(21,20)/10**16) { // [Margin Call] 1.05: liquidate
+            liquidateCollateral(borrower, choiceOfCurrency);
+            emit CollateralLiquidated (borrower, choiceOfCurrency);
+        } else if (deBankContract.returnRatio(choiceOfCurrency, totalLoanAmount, collateralCurrency, collateralAmount) <= DSMath.wdiv(6,5)/10**16) { // [Margin Call] 1.2: gives warning
+            emit Log ("WARNING: Collateral ratio has dropped below 1.2! If ratio falls further below 1.05, your collateral will be liquidated!");
+            emit MarginCallWarningSent (borrower, choiceOfCurrency);
+        } 
+    }
 
     // Function to liquidate collateral when value ratio falls below trashhold
     function liquidateCollateral(address borrower, uint256 currencyFor) private {
