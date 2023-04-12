@@ -34,7 +34,7 @@ contract Debank{
     event initializeCroRate(uint256 CroRate);
     event initializeShibRate(uint256 ShibRate);
     event initializeUniRate(uint256 UniRate);
-    event Withdraw(string choiceOfCurrency, uint256 amount);
+    event Withdraw(uint256 choiceOfCurrency, uint256 amount);
 
 
     struct user{
