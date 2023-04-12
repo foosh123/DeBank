@@ -34,6 +34,28 @@ contract Debank{
     event initializeCroRate(uint256 CroRate);
     event initializeShibRate(uint256 ShibRate);
     event initializeUniRate(uint256 UniRate);
+    event Withdraw(string choiceOfCurrency, uint256 amount);
+
+
+    struct user{
+        string name;
+        uint256 balance;
+        address add;
+    }
+
+    uint256 public numUsers = 0;
+    mapping(uint256 => user) public Users;
+
+        
+    modifier userOnly(uint256 id) {
+        require(Users[id].add == msg.sender);
+        _;
+    }
+
+    modifier validUserId(uint256 id) {
+        require(id < numUsers);
+        _;
+    }
 
     function initializeCro(uint256 x, uint256 y) public returns (uint256) {
         croRate = DSMath.wdiv(x,y)/10**16;
@@ -53,27 +75,6 @@ contract Debank{
         return uniRate;
     }
 
-    struct user{
-        string name;
-        uint256 balance;
-        address add;
-    }
-
-    event Withdraw(string choiceOfCurrency, uint256 amount);
-
-    uint256 public numUsers = 0;
-    mapping(uint256 => user) public Users;
-
-        
-    modifier userOnly(uint256 id) {
-        require(Users[id].add == msg.sender);
-        _;
-    }
-
-    modifier validUserId(uint256 id) {
-        require(id < numUsers);
-        _;
-    }
 
     function register(string memory name) public payable returns(uint256){
         require(msg.value >= 0.01 ether, "at least 0.01 ETH is needed to register");
@@ -126,18 +127,18 @@ contract Debank{
         uni.getToken(amt);
         Users[id].balance -= amt/10;
     }
-    function convertBackToETH(string memory choiceOfCurrency, uint256 id, uint256 amt) public {
-        if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Cro")) ) {
+    function convertBackToETH(uint256 choiceOfCurrency, uint256 id, uint256 amt) public {
+        if(choiceOfCurrency == 0) {
             require(cro.checkBalance() >= amt, "You dont have enough CRO");
             cro.sendToken(address(this),amt);
             Users[id].balance += amt/100;
             emit Withdraw(choiceOfCurrency, amt);
-        } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Shib")) ) {
+        } else if(choiceOfCurrency == 1) {
             require(shib.checkBalance() >= amt, "You dont have enough SHIB");
             shib.sendToken(msg.sender,address(this), amt);
             Users[id].balance += amt/10000;
             emit Withdraw(choiceOfCurrency, amt);
-        } else if(keccak256(abi.encodePacked(choiceOfCurrency))==keccak256(abi.encodePacked("Uni")) ) {
+        } else if(choiceOfCurrency == 2) {
             require(uni.checkBalance() >= amt, "You dont have enough UNI");
             uni.sendToken(msg.sender, address(this), amt);
             Users[id].balance += amt/10;
