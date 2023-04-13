@@ -6,12 +6,12 @@ import "./RNG.sol";
 import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
-import "./Debank.sol";
+import "./DeBank.sol";
 import "./Helper.sol";
 
 contract SpotOn {
     SpotOnContract spot_on_contract;
-    Debank de_bank;
+    DeBank de_bank;
     address owner;
     Helper helperContract;
     mapping(uint256 => string) currencyTypes;
@@ -24,9 +24,9 @@ contract SpotOn {
             Cro croContractAddress,
             Shib shibContractAddress,
             Uni uniContractAddress,
-            Debank debankAddress,
+            DeBank debankAddress,
             Helper helperAddress
-    ) public payable {
+    ) {
         spot_on_contract = spotOnContractAddress;
         de_bank = debankAddress;
         owner = msg.sender;
@@ -52,11 +52,11 @@ contract SpotOn {
     uint256 numCurrencyTypes = 0;
     mapping(uint256 => uint256) public transactionFees; //tracks transaction fees in different currencies
 
-    modifier userOnly(uint256 id) {
-        add = Debank.getUserAddress(id);
-        require(add == msg.sender);
-        _;
-    }
+    // modifier userOnly(uint256 id) {
+    //     add = Debank.getUserAddress(id);
+    //     require(add == msg.sender);
+    //     _;
+    // }
 
     function requestLoan(
         uint256 amount, 

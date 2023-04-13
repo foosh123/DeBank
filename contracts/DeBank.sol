@@ -13,7 +13,7 @@ library DSMath {
     }
 }
 
-contract Debank{
+contract DeBank{
     using DSMath for uint256;
     Cro cro;
     Shib shib;
@@ -22,7 +22,7 @@ contract Debank{
     uint256 shibRate;
     uint256 uniRate;
 
-    constructor() public {        
+    constructor() {        
         Cro c = new Cro();
         cro = c;
         Shib s = new Shib();
