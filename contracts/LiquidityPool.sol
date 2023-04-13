@@ -370,8 +370,9 @@ contract LiquidityPool {
             //  b. if all loan is cleared, must remove the Collateral instance from the collateralAmount array (use pop)
         uint256 totalLoanAmount = borrowedAmounts[msg.sender][choiceOfCurrency];
         if (totalLoanAmount == 0) {
-            uint256 amt = getCollateralAmountForCurrency(msg.sender, choiceOfCurrency);
-            withdrawToken(choiceOfCurrency, amt);
+            uint256 amount = getCollateralAmountForCurrency(msg.sender, choiceOfCurrency);
+            uint256 collateralCurrencyType = getCollateralCurrencyType(msg.sender, choiceOfCurrency);
+            withdrawToken(collateralCurrencyType, amount);
             removeCollateralFromCollateralList(collateralAmounts[msg.sender], choiceOfCurrency);
         }
 
@@ -644,6 +645,17 @@ contract LiquidityPool {
             }
         }
         return collateralAmount;
+    }
+
+    function getCollateralCurrencyType (address borrower, uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) view returns (uint256){
+        uint256 collateralCurrencyType;
+        for (uint i = 0; i < collateralAmounts[borrower].length; i++) {
+            if (collateralAmounts[borrower][i].collateralCurrencyType == choiceOfCurrency) {
+                collateralCurrencyType = collateralAmounts[borrower][i].currencyType;
+                break;
+            }
+        }
+        return collateralCurrencyType;
     }
 
     function getTransactionFee (uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) view returns(uint256) {
