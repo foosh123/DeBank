@@ -113,13 +113,13 @@ contract SpotOn {
         //set startDate, repaymentDate
         uint256 timeNow = getTimeStamp();
         uint256 loanPeriod = spot_on_contract.getLoanPeriod(spotOnContractId);
-        uint256 repaymentDate = timeNow + loanPeriod;
+        // uint256 repaymentDate = timeNow + loanPeriod;
         spot_on_contract.setLoanDates(spotOnContractId, timeNow);
 
         //set repaymentAmount
         uint256 amount = spot_on_contract.getAmount(spotOnContractId);
         uint256 interestRate = spot_on_contract.getInterestRate(spotOnContractId);
-        spot_on_contract.setRepaymentAmount(spotOnContractId, timeNow, repaymentDate , interestRate, amount);
+        spot_on_contract.setRepaymentAmount(spotOnContractId, loanPeriod , interestRate, amount);
         
         emit loanTaken(spotOnContractId);
     }

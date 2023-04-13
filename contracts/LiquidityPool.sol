@@ -98,6 +98,30 @@ contract LiquidityPool {
         _;
     }
 
+    // modifier to ensure lender exist
+    modifier isValidLender(address lender) {
+        bool isValid = false;
+        for (uint i=0; i < lenderList.length; i++) {
+            if(lenderList[i] == lender) {
+                isValid = true;
+            }
+        }
+        require (isValid == true, "Invalid Lender Adrress!");
+        _;
+    }
+
+    // modifier to ensure borrower exist
+    modifier isValidBorrower(address lender) {
+        bool isValid = false;
+        for (uint i=0; i < borrowerList.length; i++) {
+            if(borrowerList[i] == lender) {
+                isValid = true;
+            }
+        }
+        require (isValid == true, "Invalid Borrower Adrress!");
+        _;
+    }
+
     // transfer ownership 
     function transferOwnership(address newOwner) public ownerOnly {
         require(newOwner != _owner, "You can't transfer to the same address");
@@ -164,7 +188,7 @@ contract LiquidityPool {
     }
 
     // Function to withdraw funds
-    function withdraw(uint256 amount, uint256 choiceOfCurrency) public {
+    function withdraw(uint256 amount, uint256 choiceOfCurrency) isValidCurrency(choiceOfCurrency) isValidLender(msg.sender) public {
         require(amount > 0, "Withdrawal amount must be greater than 0");
         require(balances[msg.sender][choiceOfCurrency] >= amount, "Insufficient balance");
 
@@ -213,7 +237,7 @@ contract LiquidityPool {
     }
 
     // Function to calculate interest earned on a user's balance for a specified currency
-    function calculateInterest(uint256 currentTime) public {
+    function calculateInterest(uint256 currentTime) public ownerOnly {
         for (uint i = 0; i < lenderList.length; i++ ) {
             address lender = lenderList[i];
             for (uint j = 0; j < numPools; j++) {
@@ -254,7 +278,7 @@ contract LiquidityPool {
     }
 
     // Function to get the number of deposits made by the user for a specified currency
-    function getDepositCount(address user, uint256 currencyType) public view returns (uint256) {
+    function getDepositCount(address user, uint256 currencyType) internal view returns (uint256) {
         uint256 count = 0;
         for (uint i = 0; i < deposits[user].length; i++) {
             if (deposits[user][i].currencyType == currencyType) {
@@ -265,7 +289,7 @@ contract LiquidityPool {
     }
 
     // Function to get the number of loans made by the user for a specified currency
-    function getLoanCount(address user, uint256 currencyType) public view returns (uint256) {
+    function getLoanCount(address user, uint256 currencyType) internal view returns (uint256) {
         uint256 count = 0;
         for (uint i = 0; i < loans[user].length; i++) {
             if (loans[user][i].currencyType == currencyType) {
@@ -276,7 +300,7 @@ contract LiquidityPool {
     }
 
     // Function to borrow funds
-    function borrow(uint256 loanAmount, uint256 choiceOfCurrency, uint256 time) public {
+    function borrow(uint256 loanAmount, uint256 choiceOfCurrency, uint256 time) public isValidCurrency(choiceOfCurrency) {
         require(loanAmount > 0, "Loan amount must be greater than 0");
 
         // a. check how much colleteral needed based on currency type
@@ -309,7 +333,7 @@ contract LiquidityPool {
     }
 
     // Function to return loan
-    function returnLoan(uint256 amount, uint256 choiceOfCurrency) public {
+    function returnLoan(uint256 amount, uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) isValidBorrower(msg.sender)  {
         require(amount > 0, "Funds returned must be greater than 0");
         require(borrowedAmounts[msg.sender][choiceOfCurrency] <= amount, "Excessive funds returned");
 
@@ -361,7 +385,7 @@ contract LiquidityPool {
         emit LoanReturned(msg.sender, choiceOfCurrency, amount);
     }
 
-    function getBorrowerCollateral (uint256 choiceOfCurrency, address borrower) public view returns (Collateral memory) {
+    function getBorrowerCollateral (uint256 choiceOfCurrency, address borrower) public view  isValidCurrency(choiceOfCurrency) returns (Collateral memory) {
         Collateral memory collateral;
         for (uint i = 0; i < collateralAmounts[borrower].length; i++) {
             if (collateralAmounts[borrower][i].collateralCurrencyType == choiceOfCurrency) 
@@ -372,7 +396,7 @@ contract LiquidityPool {
         return collateral;
     }
 
-    function depositCollateral (uint256 currencyType, uint256 currencyFor, uint256 amount) public {
+    function depositCollateral (uint256 currencyType, uint256 currencyFor, uint256 amount) isValidCurrency(currencyType) public {
         //check if borrowing currency has collateral ctype 
         // Yes 
             // check if == currencyType
@@ -404,7 +428,7 @@ contract LiquidityPool {
     }
 
     // Function to calculate the interest owed on a user's loan for a specified currency
-    function calculateLoanInterest(uint256 currentTime) public {
+    function calculateLoanInterest(uint256 currentTime) public ownerOnly {
         for (uint i = 0; i < borrowerList.length; i++) {
             address borrower = borrowerList[i];
             calculateLoanInterestForBorrower(currentTime, borrower);
@@ -413,7 +437,7 @@ contract LiquidityPool {
     }
 
     // Function to calculate the interest owed on a user's loan for a specified currency
-    function calculateLoanInterestForBorrower(uint256 currentTime, address borrower) public {
+    function calculateLoanInterestForBorrower(uint256 currentTime, address borrower) public ownerOnly {
         for (uint j = 0; j < numPools; j++) {
             uint256 choiceOfCurrency = j;
             uint256 totalLoanAmount = borrowedAmounts[borrower][choiceOfCurrency];
@@ -477,7 +501,7 @@ contract LiquidityPool {
     }
 
     //--------------Helper Methods----------------
-    function approveSpender (address spender, uint256 amt) public {
+    function approveSpender (address spender, uint256 amt) public ownerOnly {
         shib.approveSpender(spender, amt);
     }
 
@@ -573,7 +597,8 @@ contract LiquidityPool {
     }
 
     // Function to get the user's balance for a specified currency
-    function getBalance(address user, uint256 choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256)  {
+    function getBalance(address user, uint256 choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256) {
+        require (user == msg.sender || _owner == msg.sender, "You are not authorised to access the balance");
         return balances[user][choiceOfCurrency];
     }
 
