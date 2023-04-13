@@ -453,6 +453,46 @@ contract LiquidityPool {
         
     }
 
+    // Function to calculate the interest owed on a user's loan for a specified currency
+    function calculateLoanInterestByUser(uint256 currentTime, address user) public {
+        for (uint j = 0; j < numPools; j++) {
+            uint256 choiceOfCurrency = j;
+            uint256 totalLoanAmount = borrowedAmounts[user][choiceOfCurrency];
+            uint256 interest = 0;
+            if (totalLoanAmount > 0) {
+                for (uint k = 0; k < getLoanCount(user, choiceOfCurrency); k++) {
+                    Loan memory l = loans[user][k];
+                    if (l.currencyType == choiceOfCurrency) {
+                        uint256 timeElapsed = currentTime - l.time;
+                        uint256 secondsInMonth = 2592000; // assuming 30 days in a month
+                        uint256 monthsElapsed = timeElapsed / secondsInMonth;
+
+                        interest += (totalLoanAmount * getBorrowerInterestRate(choiceOfCurrency) * monthsElapsed) / 100;
+                    }
+                }
+                if (interest > 0) {
+                    // Create a new loan struct and add it to the loans mapping for this user
+                    Loan memory loan = Loan(interest, currentTime, choiceOfCurrency);
+                    loans[user].push(loan);
+
+                    // transfer the token
+                    withdrawToken(choiceOfCurrency, interest);
+
+                    // Add the loan amount to the user's borrowedAmounts for the specified currency
+                    borrowedAmounts[user][choiceOfCurrency] += interest;
+                    // Remove loan amount from total pool
+                    pools[choiceOfCurrency].poolAmount -= interest;
+
+                    emit LoanBorrowed(user, choiceOfCurrency, interest);
+                    totalLoanAmount = borrowedAmounts[user][choiceOfCurrency];
+                }
+                marginCall (user, choiceOfCurrency, totalLoanAmount);
+            }
+        }
+        
+        
+    }
+
     function marginCall (address borrower, uint256 choiceOfCurrency, uint256 totalLoanAmount) public {
         // go through borrowerList, get the currency loan, check against the collateral using rate x, y
         // margin call OR liquidate accordingly 
