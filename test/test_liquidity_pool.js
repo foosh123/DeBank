@@ -350,6 +350,43 @@ contract ('Liquidity Pool', function(accounts){
 
     // margin call liquidate: collateral < x1.05 (Triggered by new loan)
     it('Margin Call Liquidate: Collateral < x1.05', async() => {
+        await debankInstance.initializeShib(1,1);
+        await debankInstance.initializeCro(1,1);
+
+        // Deposit 10 Cro token as Collateral for Uni tokens
+        await shibInstance.getToken(15, {from:accounts[9]});
+        await liquidityPoolInstance.depositCollateral(1,0,15, {from:accounts[9]});
+
+        let collateralAmount = await liquidityPoolInstance.getCollateralAmountForCurrency(accounts[9], 0);
+
+        assert.strictEqual(collateralAmount.toNumber(), 15, "Get Token Failed");
+
+        // Borrow 10 Uni tokens at Time: 1 March 2023 00:00:00
+        let borrowLoan = await liquidityPoolInstance.borrow(10, 0, 1677628800, {from:accounts[9]});
+
+        truffleAssert.eventEmitted(borrowLoan, "LoanBorrowed");
+
+        let loanAmount = await liquidityPoolInstance.getLoanBalance(accounts[9], 0);
+
+        // check if loan accounted for correctly
+        assert.strictEqual(loanAmount.toNumber(), 10, "Get Token Failed");
+
+        await debankInstance.initializeCro(5,4);
+
+        // Calculate/compound interest at Time: 30 April 2023 00:00:00
+        // Account[5] borrowed 80 token: 80 * 2 mo. * 0.05 = 8 token
+        // total loan + interest as of 30 April 2023 00:00:00: 80 + 8 = 88 token
+        // let interest = await liquidityPoolInstance.calculateLoanInterestForBorrower(1682812800, accounts[6]);
+        let marginCall = await liquidityPoolInstance.marginCall(accounts[9], 0, 10);
+        
+        // Ratio of Collateral : Loan = 120 : 88*1.2 < 1.2
+        truffleAssert.eventEmitted(marginCall, "MarginCallWarningSent");
+        // truffleAssert.eventEmitted(interest, "CollateralLiquidated");
+
+        let collateralAmount2 = await liquidityPoolInstance.getCollateralAmountForCurrency(accounts[9], 0);
+
+        // total Collateral Amount for Uni tokens should be 0 since it has been liquidated
+        assert.strictEqual(collateralAmount2.toNumber(), 15, "Get Token Failed");
     });
 
     // margin call liquidate: collateral < x1.05 (Triggered by calculate interest)
