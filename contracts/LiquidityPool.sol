@@ -90,6 +90,12 @@ contract LiquidityPool {
         _;
     }
 
+    modifier userOnly(uint256 id) {
+        add = Debank.getUserAddress(id);
+        require(add == msg.sender);
+        _;
+    }
+
     modifier isValidCurrency(uint256 currencyType) {
         bool isValid = false;
         for (uint i=0; i < numPools; i++) {

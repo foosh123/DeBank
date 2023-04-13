@@ -52,6 +52,12 @@ contract SpotOn {
     uint256 numCurrencyTypes = 0;
     mapping(uint256 => uint256) public transactionFees; //tracks transaction fees in different currencies
 
+    modifier userOnly(uint256 id) {
+        add = Debank.getUserAddress(id);
+        require(add == msg.sender);
+        _;
+    }
+
     function requestLoan(
         uint256 amount, 
         uint256 currency, 
