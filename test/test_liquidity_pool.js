@@ -368,7 +368,7 @@ contract ('Liquidity Pool', function(accounts){
 
     
     // margin call warning: collateral < x1.2 (Triggered by new loan)
-    it('Margin Call Warning: Collateral < x1.2', async() => {
+    it('Margin Call Warning: Collateral Less Than 120%', async() => {
         await debankInstance.initializeShib(1,1);
         await debankInstance.initializeCro(1,1);
 
@@ -404,7 +404,7 @@ contract ('Liquidity Pool', function(accounts){
     });
 
     // margin call warning: collateral < x1.2 (Triggered by calculate interest)
-    it('Margin Call Warning: Collateral < x1.2 (Triggered by Calculate Interest)', async() => {
+    it('Margin Call Warning: Collateral Less Than 120% (Triggered by Calculate Interest)', async() => {
         await debankInstance.initializeShib(1,1);
         await debankInstance.initializeCro(1,1);
 
@@ -443,7 +443,7 @@ contract ('Liquidity Pool', function(accounts){
     });
 
     // margin call liquidate: collateral < x1.05 (Triggered by new loan)
-    it('Margin Call Liquidate: Collateral < x1.05', async() => {
+    it('Margin Call Liquidate: Collateral Less Than 150%', async() => {
         await debankInstance.initializeShib(1,1);
         await debankInstance.initializeCro(1,1);
 
@@ -479,7 +479,7 @@ contract ('Liquidity Pool', function(accounts){
     });
 
     // margin call liquidate: collateral < x1.05 (Triggered by calculate interest)
-    it('Margin Call Liquidate: Collateral < x1.05 (Triggered by Calculate Interest)', async() => {
+    it('Margin Call Liquidate: Collateral Less Than 150% (Triggered by Calculate Interest)', async() => {
         await debankInstance.initializeCro(1,1);
         await debankInstance.initializeUni(1,1);
 
