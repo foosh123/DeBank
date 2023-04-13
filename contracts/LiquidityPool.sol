@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >= 0.5.0;
-// pragma experimental ABIEncoderV2;
 import "./ERC20.sol";
-// import "./DSMath.sol";
 import "./RNG.sol";
 import "./Cro.sol";
 import "./Shib.sol";
@@ -57,18 +55,17 @@ contract LiquidityPool {
     }
 
     address _owner = msg.sender;
-    // uint256[] numPools;
     address[] borrowerList;
     address[] lenderList;
     uint256 public numPools = 0;
     mapping(uint256 => liquidityPool) public pools;
 
     mapping(address => Deposit[]) deposits;
-    mapping(address => mapping(uint256 => uint256)) balances; //userAddress => (currencyType => amount)
+    mapping(address => mapping(uint256 => uint256)) balances; 
     
     mapping(address => Loan[]) loans;
-    mapping(address => mapping(uint256 => uint256)) borrowedAmounts; //userAddress => (currencyType => amount)
-    mapping(address => Collateral[]) collateralAmounts; //userAddress => (currencyType => amount)
+    mapping(address => mapping(uint256 => uint256)) borrowedAmounts; 
+    mapping(address => Collateral[]) collateralAmounts; 
 
     event DepositMade(address lender, uint256 choiceOfCurrency, uint256 depositAmount);
     event LoanBorrowed(address borrower, uint256 choiceOfCurrency, uint256 loanAmount);
@@ -83,12 +80,13 @@ contract LiquidityPool {
     event NewLiquidityPoolAdded(string name);
     
 
-    //modifier to ensure a function is callable only by its owner    
+    // modifier to ensure a function is callable only by its owner    
     modifier ownerOnly() {
         require(msg.sender == _owner);
         _;
     }
 
+    // modifier to ensure the currency is initiated by the contract 
     modifier isValidCurrency(uint256 currencyType) {
         bool isValid = false;
         for (uint i=0; i < numPools; i++) {
@@ -100,8 +98,9 @@ contract LiquidityPool {
         _;
     }
 
+    // transfer ownership 
     function transferOwnership(address newOwner) public ownerOnly {
-        require(newOwner != address(0));
+        require(newOwner != _owner, "You can't transfer to the same address");
         emit LogOwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
     }
@@ -111,9 +110,6 @@ contract LiquidityPool {
         string memory currencyTypeName,
         uint256 transactionFee
     ) public payable ownerOnly returns(uint256) {
-        //require(numberOfSides > 0);
-        // require((amount) > 0.00 ether, "Please deposit a minimum amount to initiate a new currency pool!");
-        // require(cro.checkBalance() >= amount, "You do not have enought currency token!");
         require(msg.sender == _owner, "Only Liquidity Pool contract Owner can add new pool");
         
         //new pool object
@@ -127,7 +123,6 @@ contract LiquidityPool {
         );
         
         pools[numPools] = newLiquidityPool; //commit to state variable
-        // numPools.push(currencyType);
         numPools++;
         
         emit NewLiquidityPoolAdded(currencyTypeName);
@@ -135,12 +130,12 @@ contract LiquidityPool {
         return numPools;   //return new poolId
     }
 
-    function checkPoolAmount (uint choiceOfCurrency) public view returns (uint256) {
+    function checkPoolAmount (uint choiceOfCurrency) public isValidCurrency(choiceOfCurrency) view returns (uint256) {
         return pools[choiceOfCurrency].poolAmount;
     }
 
     // Function to deposit funds
-    function deposit(uint256 choiceOfCurrency, uint256 depositAmount, uint256 time) public {// isValidCurrency(choiceOfCurrency) 
+    function deposit(uint256 choiceOfCurrency, uint256 depositAmount, uint256 time) public isValidCurrency(choiceOfCurrency){
         
         require(depositAmount > 0, "Deposit amount must be greater than 0");
         
@@ -359,7 +354,7 @@ contract LiquidityPool {
             }
         }
         if (isEmpty) {
-            // delete borrowerList[msg.sender];
+
             removeUserFromUserList(borrowerList, msg.sender);
         }
 
@@ -368,15 +363,12 @@ contract LiquidityPool {
 
     function getBorrowerCollateral (uint256 choiceOfCurrency, address borrower) public view returns (Collateral memory) {
         Collateral memory collateral;
-        // require (collateralAmounts[borrower].length > 0, "Boo");
         for (uint i = 0; i < collateralAmounts[borrower].length; i++) {
-            // require (collateral.collateralCurrencyType == choiceOfCurrency, "Boo 2");
             if (collateralAmounts[borrower][i].collateralCurrencyType == choiceOfCurrency) 
                 {
                     collateral = collateralAmounts[borrower][i];
                 }
         }
-        // require (collateral.amount > 0, "Boo 3");
         return collateral;
     }
 
@@ -397,7 +389,7 @@ contract LiquidityPool {
                 require (collateralAmounts[msg.sender][i].currencyType == currencyType, "Invalid Collateral Currency Type");
                 hasCollateral = true;
                 c = collateralAmounts[msg.sender][i];
-            } //A collateral using B, then I cant use C
+            } 
         }
         if (hasCollateral) {
             c.amount += amount;
@@ -561,7 +553,7 @@ contract LiquidityPool {
         d.time = timestamp;
     }
 
-    function setTransactionFee (uint256 choiceOfCurrency, uint256 fee) public ownerOnly {
+    function setTransactionFee (uint256 choiceOfCurrency, uint256 fee) public ownerOnly isValidCurrency(choiceOfCurrency){
         pools[choiceOfCurrency].transactionFee = fee;
     }
 
@@ -570,35 +562,26 @@ contract LiquidityPool {
        return _owner;
     }
 
-    function getCurrencyName(uint256 choiceOfCurrency) public view returns (string memory) {
+    function getCurrencyName(uint256 choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (string memory) {
         require (choiceOfCurrency < numPools, "Invalid Currency Type");
         return pools[choiceOfCurrency].currencyTypeName;
-        // if (choiceOfCurrency == 0) {
-        //     return "Cro";
-        // } else if (choiceOfCurrency == 1) {
-        //     return "Shib";
-        // } else if (choiceOfCurrency == 2) {
-        //     return "Uni";
-        // } else {
-        //     return "Invalid Currency Type";
-        // }
     }
     
     // Function to get the user's loan balance for a specified currency
-    function getLoanBalance(address user, uint256 currencyType) public view returns (uint256) {
-        return borrowedAmounts[user][currencyType];
+    function getLoanBalance(address user, uint256 choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256) {
+        return borrowedAmounts[user][choiceOfCurrency];
     }
 
     // Function to get the user's balance for a specified currency
-    function getBalance(address user, uint256 currencyType) public view returns (uint256)  {
-        return balances[user][currencyType];
+    function getBalance(address user, uint256 choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256)  {
+        return balances[user][choiceOfCurrency];
     }
 
-    function getBorrowerInterestRate(uint choiceOfCurrency) public view returns (uint256) {
+    function getBorrowerInterestRate(uint choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256) {
         return pools[choiceOfCurrency].borrowerInterestRate;
     }
 
-    function getLenderInterestRate(uint choiceOfCurrency) public view returns (uint256) {
+    function getLenderInterestRate(uint choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256) {
         return pools[choiceOfCurrency].lenderInterestRate;
     }
 
@@ -606,11 +589,7 @@ contract LiquidityPool {
         return deposits[Lender];
     }
 
-    // function getCollateralAmounts (uint256 index) public view returns (uint256){
-    //     return collateralAmounts[msg.sender][index].amount;
-    // }
-
-    function getCollateralAmountForCurrency (address borrower, uint256 choiceOfCurrency) public view returns (uint256){
+    function getCollateralAmountForCurrency (address borrower, uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) view returns (uint256){
         uint256 collateralAmount = 0;
         for (uint i = 0; i < collateralAmounts[borrower].length; i++) {
             if (collateralAmounts[borrower][i].collateralCurrencyType == choiceOfCurrency) {
@@ -621,12 +600,11 @@ contract LiquidityPool {
         return collateralAmount;
     }
 
-    function getTransactionFee (uint256 choiceOfCurrency) public view returns(uint256) {
+    function getTransactionFee (uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) view returns(uint256) {
         return pools[choiceOfCurrency].transactionFee;
     }
 
     function removeUserFromUserList(address[] storage arr, address add) internal {
-        // require(index < arr.length, "Index out of range");
         uint index = 0;
         for (uint i = 0; i < arr.length - 1; i++) {
             if (arr[i] == add) {
@@ -640,7 +618,6 @@ contract LiquidityPool {
     }
 
     function removeCollateralFromCollateralList(Collateral[] storage arr, uint256 currencyFor) internal {
-        // require(index < arr.length, "Index out of range");
         uint index = 0;
         for (uint i = 0; i < arr.length; i++) {
             if (arr[i].collateralCurrencyType == currencyFor) {
