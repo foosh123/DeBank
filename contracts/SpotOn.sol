@@ -45,9 +45,9 @@ contract SpotOn {
     uint256 public numOfLoans = 0;
     uint256 numCurrencyTypes = 0;
 
-    modifier userOnly(uint256 id) {
-        add = Debank.getUserAddress(id);
-        require(add == msg.sender);
+    modifier userOnly() {
+        result = Debank.checkUser(msg.sender);
+        require(result == true);
         _;
     }
 
