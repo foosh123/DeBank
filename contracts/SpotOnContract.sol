@@ -34,6 +34,10 @@ contract SpotOnContract {
         return spotOnContractAddress[spotOnContractId];
     }
 
+    function getSpotOnContractRepaymentAmount(uint256 spotOnContractId) public view returns(uint256) {
+        return activeSpotOnContracts[spotOnContractId].repaymentAmount;
+    }
+
     function getSpotOnLender(uint256 spotOnContractId) public view returns(address) {
         return activeSpotOnContracts[spotOnContractId].lender;
     }
@@ -109,13 +113,13 @@ contract SpotOnContract {
     }
 
     //function set repaymentAmount
-    function setRepaymentAmount(uint256 spotOnContractId, uint256 startDate, uint256 endDate, uint256 interestRate, uint256 amount) public {
-        uint256 daysBetween = (endDate - startDate) / 86400; // Number of seconds in a day
-        uint256 monthsBetween = daysBetween / 30; // Approximate number of months between the dates
-        uint256 interestRatePerMonth = interestRate;
+    function setRepaymentAmount(uint256 spotOnContractId, uint256 loanPeriod, uint256 interestRate, uint256 amount) public {
+        // uint256 daysBetween = loanPeriod * 86400; // Number of seconds in a day
+        uint256 monthsBetween = loanPeriod / 30; // Approximate number of months between the dates
+        // uint256 interestRatePerMonth = interestRate; //In percentage
         uint256 totalAmountDue = amount;
         for (uint256 i = 0; i < monthsBetween; i++) {
-            totalAmountDue = (amount * (10000 + interestRatePerMonth)) / 10000; // Compounding interest monthly
+            totalAmountDue = (totalAmountDue * (interestRate + 100)/100 ) ; // Compounding interest monthly
         }
         activeSpotOnContracts[spotOnContractId].repaymentAmount = totalAmountDue;
     }
