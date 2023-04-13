@@ -400,7 +400,7 @@ contract LiquidityPool {
         return collateral;
     }
 
-    function depositCollateral (uint256 currencyType, uint256 currencyFor, uint256 amount) isValidCurrency(currencyType) public {
+    function depositCollateral (uint256 currencyType, uint256 currencyFor, uint256 amount) isValidCurrency(currencyType) public userOnly{
         //check if borrowing currency has collateral ctype 
         // Yes 
             // check if == currencyType
