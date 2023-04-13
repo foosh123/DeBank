@@ -29,30 +29,14 @@ contract Helper {
     //     currentConversion = conversion;
     // }
 
-    function getPlatformFee(uint256 amt) public view returns (uint256) {
-        return platformFee;
+    function setTransactionFee(uint256 fee) public {
+        transactionFee = fee;
     }
 
-    function getTransactionFee(uint256 amt) public view returns (uint256) {
+    function getTransactionFee() public view returns (uint256) {
         return transactionFee;
     }
 
-    //before using, check if address to charge has more than the platform fee
-    function chargePlatformFee(uint256 choiceOfCurrency, address user, address recipient) public payable {
-        if(choiceOfCurrency == 0) { 
-            uint256 convertedFee = platformFee/100;
-            require(cro.checkBalance(user) >= convertedFee, "Insufficient tokens");
-            cro.sendToken(user, recipient, convertedFee);
-        } else if(choiceOfCurrency == 1) {
-            uint256 convertedFee = platformFee/10000;
-            require(shib.checkBalance(user) >= convertedFee, "Insufficient tokens");
-            shib.sendToken(user, recipient, convertedFee);  
-        } else if(choiceOfCurrency == 2) {
-            uint256 convertedFee = platformFee/10;
-            require(uni.checkBalance(user) >= convertedFee, "Insufficient tokens");
-            uni.sendToken(user, recipient, convertedFee); 
-        }
-    }
 
     //before using, check if address to charge has more than the transaction fee
     function chargeTransactionFee(uint256 choiceOfCurrency, address user, address recipient) public payable {
@@ -71,7 +55,7 @@ contract Helper {
             }
     } 
 
-    function getTransactionFeeAmount(uint256 choiceOfCurrency) public pure returns (uint256) {
+    function getTransactionFeeAmount(uint256 choiceOfCurrency) public pure returns(uint256) {
         if(choiceOfCurrency == 0) { 
             return 5;
         } else if(choiceOfCurrency == 1) {

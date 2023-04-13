@@ -13,7 +13,7 @@ library DSMath {
     }
 }
 
-contract Debank{
+contract DeBank{
     using DSMath for uint256;
     Cro cro;
     Shib shib;
@@ -22,7 +22,7 @@ contract Debank{
     uint256 shibRate;
     uint256 uniRate;
 
-    constructor() public {        
+    constructor() {        
         Cro c = new Cro();
         cro = c;
         Shib s = new Shib();
@@ -45,7 +45,7 @@ contract Debank{
 
     uint256 public numUsers = 0;
     mapping(uint256 => user) public Users;
-
+    mapping(address => bool) public CheckUsers;
         
     modifier userOnly(uint256 id) {
         require(Users[id].add == msg.sender);
@@ -87,8 +87,13 @@ contract Debank{
 
         uint256 newUserId = numUsers++;
         Users[newUserId] = newUser; 
+        CheckUsers[msg.sender] = true;
         return newUserId;   
 
+    }
+
+    function checkUser(address add) public view returns(bool){
+        return CheckUsers[add];
     }
 
     function checkBalance(uint256 id) public view validUserId(id) returns(uint256){
@@ -168,6 +173,14 @@ contract Debank{
 
     function getCroRate() public view returns(uint256) {
         return croRate;
+    }
+
+    function getShibRate() public view returns(uint256) {
+        return shibRate;
+    }
+
+    function getUniRate() public view returns(uint256) {
+        return uniRate;
     }
 
 }

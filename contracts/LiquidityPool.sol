@@ -7,7 +7,7 @@ import "./RNG.sol";
 import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
-import "./Debank.sol";
+import "./DeBank.sol";
 import "./Helper.sol";
 
 contract LiquidityPool {
@@ -16,10 +16,10 @@ contract LiquidityPool {
     Cro cro;
     Shib shib;
     Uni uni;
-    Debank deBankContract;
+    DeBank deBankContract;
     Helper helperContract;
 
-    constructor(Debank deBankAddress, RNG rngAddress, Cro croAddress, Shib shibAdress, Uni uniAddress, Helper helperAddress) public { 
+    constructor(DeBank deBankAddress, RNG rngAddress, Cro croAddress, Shib shibAdress, Uni uniAddress, Helper helperAddress) { 
         deBankContract = deBankAddress; 
         r = rngAddress; 
         cro = croAddress;
@@ -590,7 +590,7 @@ contract LiquidityPool {
         pools[choiceOfCurrency].borrowerInterestRate =  r.generateRandonNumber();
     }
 
-    function setDepositTime(Deposit memory d, uint256 timestamp) public {
+    function setDepositTime(Deposit memory d, uint256 timestamp) public pure {
         d.time = timestamp;
     }
 
