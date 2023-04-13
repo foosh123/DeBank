@@ -38,8 +38,7 @@ contract ('Liquidity Pool', function(accounts){
     it("Create New Liquidity Pool (Alternative: Incorrect Liquidity Pool Owner)", async () => {
         
         // account[1] initialize new cro pool
-        await truffleAssert.fails(
-            liquidityPoolInstance.addNewPool("Cro", {from: accounts[1]}));
+        await truffleAssert.fails(liquidityPoolInstance.addNewPool("Cro", {from: accounts[1]}));
     });
 
     // Test the creation of multiple Liquidity Pools
@@ -56,6 +55,22 @@ contract ('Liquidity Pool', function(accounts){
         let sendToUniPool = await liquidityPoolInstance.depositToken(2, 2000, {from:accounts[0]});
         truffleAssert.eventEmitted(pool_Uni, 'NewLiquidityPoolAdded');
         
+    });
+
+    // Check Transaction Fee for Different currency
+    it('Lender Checks Transaction Fees', async() => {
+        let getCroTransactionFees = await liquidityPoolInstance.getTransactionFee(0);
+        let getShibTransactionFees = await liquidityPoolInstance.getTransactionFee(1);
+        let getUniTransactionFees = await liquidityPoolInstance.getTransactionFee(2);
+
+        assert.strictEqual(getCroTransactionFees.toNumber(), 5, "Incorrect Cro Transaction Fees");
+        assert.strictEqual(getShibTransactionFees.toNumber(), 10, "Incorrect Shib Transaction Fees");
+        assert.strictEqual(getUniTransactionFees.toNumber(), 15, "Incorrect Uni Transaction Fees");        
+    });
+
+    // Check Transaction Fee  for Different currency (Alternative: Invalid Currency)
+    it("Lender Checks Transaction Fees (Alternative: Invalid Currency)", async() => {
+        await truffleAssert.reverts(liquidityPoolInstance.getTransactionFee(3), "The Currency is not supported yet!");      
     });
 
     // Lend currency into Liquidity Pool
@@ -121,6 +136,24 @@ contract ('Liquidity Pool', function(accounts){
 
         await truffleAssert.reverts(liquidityPoolInstance.deposit(0, 0, 1677628800, {from: accounts[2]}), "Deposit amount must be greater than 0");
         
+    });
+
+    // User Check Balance
+    it('Lender Checks Balance', async() => {
+
+        let getCroBalance = await liquidityPoolInstance.getBalance(accounts[1], 0, {from: accounts[1]});
+
+        assert.strictEqual(getCroBalance.toNumber(), 45, "Incorrect Leftover Token Balance");        
+    });
+
+    // User Check Balance (Alternative: Cannot Check Other User's Balance)
+    it("Lender Checks Balance (Alternative: Cannot Check Other User's Balance)", async() => {
+        await truffleAssert.reverts(liquidityPoolInstance.getBalance(accounts[1], 0, {from: accounts[2]}), "You are not authorised to access the balance");      
+    });
+
+    // User Check Balance (Alternative: Invalid Currency)
+    it("Lender Checks Balance (Alternative: Invalid Currency)", async() => {
+        await truffleAssert.reverts(liquidityPoolInstance.getBalance(accounts[1], 4, {from: accounts[1]}), "The Currency is not supported yet!");      
     });
 
     // Check if interest was compounded correctly
