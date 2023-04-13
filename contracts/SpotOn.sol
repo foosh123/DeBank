@@ -7,11 +7,13 @@ import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
 import "./Debank.sol";
+import "./Helper.sol";
 
 contract SpotOn {
     SpotOnContract spot_on_contract;
     Debank de_bank;
     address owner;
+    Helper helperContract;
     mapping(uint256 => string) currencyTypes;
     RNG r = new RNG();
     Cro cro;
@@ -22,12 +24,16 @@ contract SpotOn {
             Cro croContractAddress,
             Shib shibContractAddress,
             Uni uniContractAddress,
-            Debank debankAddress
+            Debank debankAddress,
+            Helper helperAddress
     ) public payable {
         spot_on_contract = spotOnContractAddress;
         de_bank = debankAddress;
         owner = msg.sender;
         cro = croContractAddress;
+        shib = shibContractAddress;
+        uni = uniContractAddress;
+        helperContract = helperAddress;
     }
 
     event loanRequested(uint256 spotOnContractId);
@@ -44,6 +50,7 @@ contract SpotOn {
     mapping(uint256 => SpotOnContract) public spotOnContracts;  // tracks all loans that have been accepted, to check loanPeriod is valid
     uint256 public numOfLoans = 0;
     uint256 numCurrencyTypes = 0;
+    mapping(uint256 => uint256) public transactionFees; //tracks transaction fees in different currencies
 
     function requestLoan(
         uint256 amount, 
@@ -118,19 +125,26 @@ contract SpotOn {
         address borrower = spot_on_contract.getSpotOnBorrower(spotOnContractId);
         uint256 amount = spot_on_contract.getAmount(spotOnContractId);
         uint256 choiceOfCurrency = spot_on_contract.getCurrencyType(spotOnContractId);
+        uint256 transactionFee = helperContract.getTransactionFee();
+        
+        address spotOnOwnerAddress = getOwner();
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
-            // require(cro.checkBalance(address(this)) >= amount, "Insufficient tokens in pool to withdraw");
-            cro.sendToken(lender,borrower, amount);
+            require(cro.checkBalance(lender) >= amount + transactionFee, "Insufficient tokens in pool to withdraw");
+            cro.sendToken(lender, borrower, amount);
+            cro.sendToken(lender, spotOnOwnerAddress, transactionFee);
             emit Transferred(choiceOfCurrency, amount);
         } else if(choiceOfCurrency == 1) {
-            // require(shib.checkBalance(address(this)) >= amount, "Insufficient tokens in pool to withdraw");
+            require(shib.checkBalance(lender) >= amount + transactionFee, "Insufficient tokens in pool to withdraw");
             shib.sendToken(lender, borrower, amount);
+            shib.sendToken(lender,spotOnOwnerAddress, transactionFee);
             emit Transferred(choiceOfCurrency, amount);
         } else if(choiceOfCurrency == 2) {
-            // require(uni.checkBalance(address(this)) >= amount, "Insufficient tokens in pool to withdraw");
+            require(uni.checkBalance(lender) >= amount + transactionFee, "Insufficient tokens in pool to withdraw");
             uni.sendToken(lender, borrower, amount);
+            uni.sendToken(lender,spotOnOwnerAddress, transactionFee);
             emit Transferred(choiceOfCurrency, amount);
         } 
+        transactionFees[choiceOfCurrency] += transactionFee;
     }
 
 
@@ -144,7 +158,7 @@ contract SpotOn {
 
         if (ratio <= 105) {
             liquidateCollateral(spotOnContractId);
-        } else if (ratio <= 150) {
+        } else if (ratio <= 120) {
             emit warningCollateralLow("Please add on to your collateral");
         }
         return ratio;
@@ -215,6 +229,10 @@ contract SpotOn {
         _;
     }
 
+    function getOwner() public view returns(address){
+        return owner;
+    }
+
     
     function depositCollateral(uint256 choiceOfCurrency, uint256 amount, uint256 spotOnContractId) public isValidCurrency(choiceOfCurrency) {
         require (amount > 0, "Can't deposit 0 tokens");
@@ -227,16 +245,16 @@ contract SpotOn {
 
         //transfer the token
         if(choiceOfCurrency == 0) { 
-            require(cro.checkBalance(msg.sender) >= amount, "Insufficient tokens in pool to withdraw");
+            require(cro.checkBalance(borrower) >= amount, "Insufficient tokens in pool to withdraw");
             cro.sendToken(spotOnContractAddress, amount);
             emit collateralTransferred(choiceOfCurrency, amount);
         } 
         else if(choiceOfCurrency == 1) {
-            require(shib.checkBalance(msg.sender) >= amount, "Insufficient tokens in pool to withdraw");
+            require(shib.checkBalance(borrower) >= amount, "Insufficient tokens in pool to withdraw");
             shib.sendToken(spotOnContractAddress, amount);
             emit collateralTransferred(choiceOfCurrency, amount);
         } else if(choiceOfCurrency == 2) {
-            require(uni.checkBalance(msg.sender) >= amount, "Insufficient tokens in pool to withdraw");
+            require(uni.checkBalance(borrower) >= amount, "Insufficient tokens in pool to withdraw");
             uni.sendToken(spotOnContractAddress, amount);
             emit collateralTransferred(choiceOfCurrency, amount);
         } 
@@ -248,5 +266,9 @@ contract SpotOn {
 
     function getCurrencyNum() public view returns(uint256) {
         return numCurrencyTypes;
+    }
+
+    function getTotalTransactionFee(uint256 currency) public view returns(uint256){
+        return transactionFees[currency];
     }
 }

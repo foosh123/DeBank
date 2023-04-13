@@ -170,5 +170,13 @@ contract Debank{
         return croRate;
     }
 
+    function getShibRate() public view returns(uint256) {
+        return shibRate;
+    }
+
+    function getUniRate() public view returns(uint256) {
+        return uniRate;
+    }
+
 }
 
