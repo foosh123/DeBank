@@ -66,7 +66,7 @@ contract('SpotOn', function(accounts) {
         });
     });
 
-    it('Borrower requests with too little collateral', async() => {
+    it('Borrower Requests with Too Little Collateral', async() => {
         try {
             let  = await SpotOnInstance.requestLoan(100, 0, 10, 5, 360, 140, 0, {from:accounts[1]});
         } catch (e) {
@@ -117,7 +117,7 @@ contract('SpotOn', function(accounts) {
         });
     });
     
-    it('Borrower Edits Loan Amount, Collateral enough', async() => {0
+    it('Borrower Edits Loan Amount, Collateral Enough', async() => {0
         let editAmount = await SpotOnInstance.editAmount(0, 95, {from:accounts[1]});
         truffleAssert.eventEmitted(editAmount, "loanAmountEdited");
 
@@ -136,7 +136,7 @@ contract('SpotOn', function(accounts) {
         }
     });
 
-    it('Borrower Edits Loan Amount, Collateral not enough', async() => {
+    it('Borrower Edits Loan Amount, Collateral not Enough', async() => {
         try {          
             // let amount = await SpotOnContractInstance.getAmount(0);
             // console.log(amount);
@@ -153,7 +153,7 @@ contract('SpotOn', function(accounts) {
         }
     });
 
-    it('Borrower transfer collateral', async() => {
+    it('Borrower Transfer Collateral', async() => {
         //add Cro Balance to borrower account
         let borrowerAddCro = await CroInstance.getToken(150, {from:accounts[1]})
 
@@ -171,7 +171,7 @@ contract('SpotOn', function(accounts) {
     })
 
 
-    it('Borrower adds on Collateral', async() => {
+    it('Borrower Adds on Collateral', async() => {
         let borrowerAddCro = await CroInstance.getToken(50, {from:accounts[1]})
         let addAmount = await SpotOnInstance.addCollateral(0, 50, {from:accounts[1]});
        
@@ -210,7 +210,7 @@ contract('SpotOn', function(accounts) {
         return assert.equal(transactionFee, 5);
     })
 
-    it("Trigger Margin Call, ratio less than 120%, warning is given", async() => {
+    it("Trigger Margin Call, Ratio Less Than 120%, Warning is Given", async() => {
         let initializeCro = await DeBankInstance.initializeCro(18,10);
         let croRate = await DeBankInstance.getCroRate(); // 180%
         // console.log(croRate);
@@ -222,7 +222,7 @@ contract('SpotOn', function(accounts) {
         truffleAssert.eventEmitted(triggerMarginCall, "warningCollateralLow");
     })
 
-    it("Trigger Margin Call, ratio less than 105%, collateral is liquidated", async() => {
+    it("Trigger Margin Call, Ratio Less Than 105%, Collateral is Liquidated", async() => {
         let initializeCro = await DeBankInstance.initializeCro(4,2);
         let croRate = await DeBankInstance.getCroRate(); // 200%
         let amount = await SpotOnContractInstance.getAmount(0);
