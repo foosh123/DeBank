@@ -10,7 +10,6 @@ var RNG = artifacts.require("../contracts/RNG.sol");
 var Cro = artifacts.require("../contracts/Cro.sol");
 var Shib = artifacts.require("../contracts/Shib.sol");
 var Uni = artifacts.require("../contracts/Uni.sol");
-var Helper = artifacts.require("../contracts/Helper.sol");
 
 contract('SpotOn', function(accounts) {
     before(async () => {
@@ -20,7 +19,6 @@ contract('SpotOn', function(accounts) {
         ShibInstance = await Shib.deployed();
         UniInstance = await Uni.deployed();
         DeBankInstance = await DeBank.deployed();
-        HelperInstance = await Helper.deployed();
     });
     
     //Register all the users
@@ -217,7 +215,7 @@ contract('SpotOn', function(accounts) {
         let editAmount = await SpotOnInstance.editAmount(0, 100, {from:accounts[1]});
 
         // set the transaction fee to be 5
-        let setTransactionFee = await HelperInstance.setTransactionFee(5);
+        let setTransactionFee = await DeBankInstance.setTransactionFee(5);
 
         //add Cro Balance to lender account
         let lenderaddCro = await CroInstance.getToken(105, {from:accounts[2]})

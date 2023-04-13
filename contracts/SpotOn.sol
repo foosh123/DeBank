@@ -7,13 +7,11 @@ import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
 import "./DeBank.sol";
-import "./Helper.sol";
 
 contract SpotOn {
     SpotOnContract spot_on_contract;
     DeBank de_bank;
     address owner;
-    Helper helperContract;
     mapping(uint256 => string) currencyTypes;
     RNG r = new RNG();
     Cro cro;
@@ -24,8 +22,7 @@ contract SpotOn {
             Cro croContractAddress,
             Shib shibContractAddress,
             Uni uniContractAddress,
-            DeBank debankAddress,
-            Helper helperAddress
+            DeBank debankAddress
     ) {
         spot_on_contract = spotOnContractAddress;
         de_bank = debankAddress;
@@ -33,7 +30,6 @@ contract SpotOn {
         cro = croContractAddress;
         shib = shibContractAddress;
         uni = uniContractAddress;
-        helperContract = helperAddress;
     }
 
     event loanRequested(uint256 spotOnContractId);
@@ -194,7 +190,7 @@ contract SpotOn {
         address borrower = spot_on_contract.getSpotOnBorrower(spotOnContractId);
         uint256 amount = spot_on_contract.getAmount(spotOnContractId);
         uint256 choiceOfCurrency = spot_on_contract.getCurrencyType(spotOnContractId);
-        uint256 transactionFee = helperContract.getTransactionFee();
+        uint256 transactionFee = de_bank.getTransactionFee();
         address spotOnOwnerAddress = getOwner();
 
         //transfer the respective amount to the borrower and spotOnOwner depending on the currency type
