@@ -91,6 +91,10 @@ contract Debank{
 
     }
 
+    function getUserAddress(uint256 id) public view returns(address){
+        return Users[id].add;
+    }
+
     function checkBalance(uint256 id) public view validUserId(id) returns(uint256){
         return Users[id].balance;
     }
