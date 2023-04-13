@@ -45,7 +45,7 @@ contract DeBank{
 
     uint256 public numUsers = 0;
     mapping(uint256 => user) public Users;
-
+    mapping(address => bool) public CheckUsers;
         
     modifier userOnly(uint256 id) {
         require(Users[id].add == msg.sender);
@@ -87,12 +87,13 @@ contract DeBank{
 
         uint256 newUserId = numUsers++;
         Users[newUserId] = newUser; 
+        CheckUsers[msg.sender] = true;
         return newUserId;   
 
     }
 
-    function getUserAddress(uint256 id) public view returns(address){
-        return Users[id].add;
+    function checkUser(address add) public view returns(bool){
+        return CheckUsers[add];
     }
 
     function checkBalance(uint256 id) public view validUserId(id) returns(uint256){
