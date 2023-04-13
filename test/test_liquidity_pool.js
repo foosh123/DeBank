@@ -25,7 +25,7 @@ contract ('Liquidity Pool', function(accounts){
     console.log("Testing Liquidity Pool contract");
 
     //register user
-    it('registers users', async() => {
+    it('Registers Users', async() => {
         let user1 = await debankInstance.register('Adam', {from: accounts[1], value:10000000000000000});
         let user2 = await debankInstance.register('Ben', {from: accounts[2], value:10000000000000000});
         let user3 = await debankInstance.register('Chad', {from: accounts[3], value:10000000000000000});
