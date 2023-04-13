@@ -366,6 +366,16 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(balance.toNumber(), 88, "Get Token Failed");
     });
 
+    // return loan amount borrowed back to liquidity pool
+    it('Borrower Returns Withdrawn Loan Amount Back to Liquidity Pool', async() => {
+        let returnLoan = await liquidityPoolInstance.returnLoan(100, 1, {from:accounts[4]});
+
+        truffleAssert.eventEmitted(returnLoan, "LoanReturned");
+
+        let loanAmount = await liquidityPoolInstance.getLoanBalance(accounts[4], 1);
+
+        assert.strictEqual(loanAmount.toNumber(), 0, "Get Token Failed");
+    });
     
     // margin call warning: collateral < x1.2 (Triggered by new loan)
     it('Margin Call Warning: Collateral Less Than 120%', async() => {
