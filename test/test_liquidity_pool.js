@@ -38,8 +38,7 @@ contract ('Liquidity Pool', function(accounts){
     it("Create New Liquidity Pool (Alternative: Incorrect Liquidity Pool Owner)", async () => {
         
         // account[1] initialize new cro pool
-        await truffleAssert.fails(
-            liquidityPoolInstance.addNewPool("Cro", {from: accounts[1]}));
+        await truffleAssert.fails(liquidityPoolInstance.addNewPool("Cro", {from: accounts[1]}));
     });
 
     // Test the creation of multiple Liquidity Pools
@@ -56,6 +55,42 @@ contract ('Liquidity Pool', function(accounts){
         let sendToUniPool = await liquidityPoolInstance.depositToken(2, 2000, {from:accounts[0]});
         truffleAssert.eventEmitted(pool_Uni, 'NewLiquidityPoolAdded');
         
+    });
+
+    // check the interest rate for lending to pool
+    it('Check Interest Rate for Lending', async() => {
+        
+        // Simulate API calling and Set Cro interest rate as 5%
+        await rngInstance.setRandomNumber(5);
+        // Set Cro interest rate as 5% by calling simulated numder set in API
+        await liquidityPoolInstance.setLenderInterestRate(0);
+        // get lender interest rate for Cro 
+        let lenderInerestRate = await liquidityPoolInstance.getLenderInterestRate(0);
+        assert.strictEqual(lenderInerestRate.toNumber(), 5, "Incorrect Interest Rate for Lending!");
+
+    });
+
+    // check the interest rate for lending to pool, but invalid currency type
+    it('Check Interest Rate for Lending (Alternative: Invalid Currency)', async() => {
+        // request interest rate for invalid currency type
+        await truffleAssert.reverts(liquidityPoolInstance.getLenderInterestRate(8), "The Currency is not supported yet!");
+        
+    });
+
+    // Check Transaction Fee for Different currency
+    it('Lender Checks Transaction Fees', async() => {
+        let getCroTransactionFees = await liquidityPoolInstance.getTransactionFee(0);
+        let getShibTransactionFees = await liquidityPoolInstance.getTransactionFee(1);
+        let getUniTransactionFees = await liquidityPoolInstance.getTransactionFee(2);
+
+        assert.strictEqual(getCroTransactionFees.toNumber(), 5, "Incorrect Cro Transaction Fees");
+        assert.strictEqual(getShibTransactionFees.toNumber(), 10, "Incorrect Shib Transaction Fees");
+        assert.strictEqual(getUniTransactionFees.toNumber(), 15, "Incorrect Uni Transaction Fees");        
+    });
+
+    // Check Transaction Fee  for Different currency (Alternative: Invalid Currency)
+    it("Lender Checks Transaction Fees (Alternative: Invalid Currency)", async() => {
+        await truffleAssert.reverts(liquidityPoolInstance.getTransactionFee(3), "The Currency is not supported yet!");      
     });
 
     // Lend currency into Liquidity Pool
@@ -123,6 +158,24 @@ contract ('Liquidity Pool', function(accounts){
         
     });
 
+    // User Check Balance
+    it('Lender Checks Balance', async() => {
+
+        let getCroBalance = await liquidityPoolInstance.getBalance(accounts[1], 0, {from: accounts[1]});
+
+        assert.strictEqual(getCroBalance.toNumber(), 45, "Incorrect Leftover Token Balance");        
+    });
+
+    // User Check Balance (Alternative: Cannot Check Other User's Balance)
+    it("Lender Checks Balance (Alternative: Cannot Check Other User's Balance)", async() => {
+        await truffleAssert.reverts(liquidityPoolInstance.getBalance(accounts[1], 0, {from: accounts[2]}), "You are not authorised to access the balance");      
+    });
+
+    // User Check Balance (Alternative: Invalid Currency)
+    it("Lender Checks Balance (Alternative: Invalid Currency)", async() => {
+        await truffleAssert.reverts(liquidityPoolInstance.getBalance(accounts[1], 4, {from: accounts[1]}), "The Currency is not supported yet!");      
+    });
+
     // Check if interest was compounded correctly
     it('Lender Interest Compounded', async() => {
 
@@ -184,6 +237,26 @@ contract ('Liquidity Pool', function(accounts){
         // verify that Account[4]'s Uni Token Balance is back to 0
         let ownedUniToken = await liquidityPoolInstance.getBalance(accounts[4], 2);
         assert.strictEqual(ownedUniToken.toNumber(), 0, "Incorrect Token Balance");
+        
+    });
+
+    // check the interest rate for borrowing from pool
+    it('Check Interest Rate for Borrowing', async() => {
+        
+        // Simulate API calling and Set Shib interest rate as 5%
+        await rngInstance.setRandomNumber(12);
+        // Set Shib interest rate as 12% by calling simulated numder set in API
+        await liquidityPoolInstance.setBorrowerInterestRate(1);
+        // get borrower interest rate for Shib 
+        let borrowerInerestRate = await liquidityPoolInstance.getBorrowerInterestRate(1);
+        assert.strictEqual(borrowerInerestRate.toNumber(), 12, "Incorrect Interest Rate for Borrowing!");
+
+    });
+
+    // check the interest rate for borrowing from pool, but invalid currency type
+    it('Check Interest Rate for Borrowing (Alternative: Invalid Currency)', async() => {
+        // request interest rate for invalid currency type
+        await truffleAssert.reverts(liquidityPoolInstance.getBorrowerInterestRate(4), "The Currency is not supported yet!");
         
     });
 
