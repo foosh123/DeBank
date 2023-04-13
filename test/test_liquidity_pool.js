@@ -375,10 +375,10 @@ contract ('Liquidity Pool', function(accounts){
         let loanAmount = await liquidityPoolInstance.getLoanBalance(accounts[4], 1);
 
         assert.strictEqual(loanAmount.toNumber(), 0, "Get Token Failed");
+        //check if collateral is returned to the user
+        let returnCollateralAmount = await croInstance.checkBalance(accounts[4]);
 
-        let collateralAmount = await croInstance.checkBalance(accounts[4]);
-
-        assert.strictEqual(collateralAmount.toNumber(), 150, "Get Token Failed");
+        assert.strictEqual(collateralAmount.toNumber(), 150, "Collateral Returned Failed");
     });
     
     // margin call warning: collateral < x1.2 (Triggered by new loan)
