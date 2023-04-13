@@ -86,6 +86,7 @@ contract LiquidityPool {
         _;
     }
 
+    // modifier to ensure a function can only be called by a registered user of the platform
     modifier userOnly() {
         bool result = deBankContract.checkUser(msg.sender);
         require(result == true);

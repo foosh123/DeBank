@@ -52,7 +52,7 @@ contract SpotOn {
     uint256 public numOfLoans = 0; //tracks total number of loans
     uint256 numCurrencyTypes = 0; //tracks total number of currency types
 
-
+    // modifier to ensure a function can only be called by a registered user of the platform
     modifier userOnly() {
         bool result = de_bank.checkUser(msg.sender);
         require(result == true);
