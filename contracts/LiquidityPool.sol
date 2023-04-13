@@ -86,6 +86,12 @@ contract LiquidityPool {
         _;
     }
 
+    modifier userOnly() {
+        bool result = deBankContract.checkUser(msg.sender);
+        require(result == true);
+        _;
+    }
+
     // modifier to ensure the currency is initiated by the contract 
     modifier isValidCurrency(uint256 currencyType) {
         bool isValid = false;
@@ -159,7 +165,7 @@ contract LiquidityPool {
     }
 
     // Function to deposit funds
-    function deposit(uint256 choiceOfCurrency, uint256 depositAmount, uint256 time) public isValidCurrency(choiceOfCurrency){
+    function deposit(uint256 choiceOfCurrency, uint256 depositAmount, uint256 time) public isValidCurrency(choiceOfCurrency) userOnly {
         
         require(depositAmount > 0, "Deposit amount must be greater than 0");
         
@@ -188,7 +194,7 @@ contract LiquidityPool {
     }
 
     // Function to withdraw funds
-    function withdraw(uint256 amount, uint256 choiceOfCurrency) isValidCurrency(choiceOfCurrency) isValidLender(msg.sender) public {
+    function withdraw(uint256 amount, uint256 choiceOfCurrency) isValidCurrency(choiceOfCurrency) isValidLender(msg.sender) public userOnly{
         require(amount > 0, "Withdrawal amount must be greater than 0");
         require(balances[msg.sender][choiceOfCurrency] >= amount, "Insufficient balance");
 
@@ -300,7 +306,7 @@ contract LiquidityPool {
     }
 
     // Function to borrow funds
-    function borrow(uint256 loanAmount, uint256 choiceOfCurrency, uint256 time) public isValidCurrency(choiceOfCurrency) {
+    function borrow(uint256 loanAmount, uint256 choiceOfCurrency, uint256 time) public isValidCurrency(choiceOfCurrency) userOnly {
         require(loanAmount > 0, "Loan amount must be greater than 0");
 
         // a. check how much colleteral needed based on currency type
@@ -333,7 +339,7 @@ contract LiquidityPool {
     }
 
     // Function to return loan
-    function returnLoan(uint256 amount, uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) isValidBorrower(msg.sender)  {
+    function returnLoan(uint256 amount, uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) isValidBorrower(msg.sender) userOnly {
         require(amount > 0, "Funds returned must be greater than 0");
         require(borrowedAmounts[msg.sender][choiceOfCurrency] <= amount, "Excessive funds returned");
 

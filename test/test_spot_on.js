@@ -23,6 +23,14 @@ contract('SpotOn', function(accounts) {
         HelperInstance = await Helper.deployed();
     });
 
+    it('registers users', async() => {
+        let user1 = await debankInstance.register('Adam', {from: accounts[1], value:10000000000000000});
+        let user2 = await debankInstance.register('Ben', {from: accounts[2], value:10000000000000000});
+        let user3 = await debankInstance.register('Chad', {from: accounts[3], value:10000000000000000});
+        let user4 = await debankInstance.register('Dion', {from: accounts[4], value:10000000000000000});
+        truffleAssert.eventEmitted(user1,'registerUser');
+    });
+
     it('Add Currencies to SpotOn', async() => {
         //add currency to spotOn
         let currencyAdded = await SpotOnInstance.addCurrency("Cro");
@@ -55,6 +63,12 @@ contract('SpotOn', function(accounts) {
             assert.equal(shibRate, 150);
         })
     })
+
+    it("Borrower Requests For Loan (Alternative: Unregistered User)", async () => {
+        // 
+        await truffleAssert.fails(
+            SpotOnInstance.requestLoan(100, 0, 10, 5, 360, 150, 0, {from:accounts[0]}));
+    });
 
     it('Borrower Requests For Loan', async() => {
         // send tokens to account...

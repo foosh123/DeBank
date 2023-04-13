@@ -79,7 +79,7 @@ contract SpotOn {
         uint256 interestRate, 
         uint256 loanPeriod, 
         uint256 collateral,
-        uint256 collateralCurrency) public payable returns (uint256){
+        uint256 collateralCurrency) public payable userOnly returns (uint256){
         
         //collateral amount must be at least 1.5 times of the amount
         require(collateral >= (amount * 3) / 2, "collateral must be at least 1.5 times of the amount");
@@ -104,7 +104,7 @@ contract SpotOn {
         uint256 interestRate, 
         uint256 loanPeriod, 
         uint256 collateral,
-        uint256 collateralCurrency) public returns (uint256){
+        uint256 collateralCurrency) public userOnly returns (uint256){
         
         //collateral amount must be at least 1.5 times 
         require(collateral >= (amount * 3) / 2, "collateral must be at least 1.5 times of the amount");
@@ -129,7 +129,7 @@ contract SpotOn {
     }
 
     //function to edit amount in the spotOnContract
-    function editAmount(uint256 spotOnContractId, uint256 newAmount) public returns(uint256) {
+    function editAmount(uint256 spotOnContractId, uint256 newAmount) public userOnly returns(uint256) {
         //check that msg.sender is the borrower        
         address borrower = spot_on_contract.getSpotOnBorrower(spotOnContractId);
         require (msg.sender == borrower , "only borrower can edit amount");
@@ -154,7 +154,7 @@ contract SpotOn {
     }
     
     //function to takeOnLoan, can be called by either the borrower or the lender
-    function takeOnLoan(uint256 spotOnContractId) public payable {
+    function takeOnLoan(uint256 spotOnContractId) public userOnly payable {
         //check that the borrower or the lender are either empty address
         require(spot_on_contract.getSpotOnBorrower(spotOnContractId) == address(0) || spot_on_contract.getSpotOnLender(spotOnContractId) == address(0));
 
@@ -184,7 +184,7 @@ contract SpotOn {
     }
 
     //function to transfer amount from lender to borrower
-    function transferAmount(uint256 spotOnContractId) public {
+    function transferAmount(uint256 spotOnContractId) public userOnly {
 
         //check that msg.sender is the lender        
         address lender = spot_on_contract.getSpotOnLender(spotOnContractId);
@@ -264,7 +264,7 @@ contract SpotOn {
     }
     
     //function to add collateral to a spotOnContract
-    function addCollateral(uint256 spotOnContractId, uint256 amount) public {
+    function addCollateral(uint256 spotOnContractId, uint256 amount) public userOnly {
 
         //check that msg.sender is the borrower        
         address borrower = spot_on_contract.getSpotOnBorrower(spotOnContractId);
@@ -291,7 +291,7 @@ contract SpotOn {
         emit collateralAdded(spotOnContractId, amount);
     }
 
-    function depositCollateral(uint256 choiceOfCurrency, uint256 amount, uint256 spotOnContractId) public isValidCurrency(choiceOfCurrency) {
+    function depositCollateral(uint256 choiceOfCurrency, uint256 amount, uint256 spotOnContractId) public isValidCurrency(choiceOfCurrency) userOnly {
         //amount deposited must be more than 0
         require (amount > 0, "Can't deposit 0 tokens");
         

@@ -24,6 +24,20 @@ contract ('Liquidity Pool', function(accounts){
 
     console.log("Testing Liquidity Pool contract");
 
+    //register user
+    it('registers users', async() => {
+        let user1 = await debankInstance.register('Adam', {from: accounts[1], value:10000000000000000});
+        let user2 = await debankInstance.register('Ben', {from: accounts[2], value:10000000000000000});
+        let user3 = await debankInstance.register('Chad', {from: accounts[3], value:10000000000000000});
+        let user4 = await debankInstance.register('Dion', {from: accounts[4], value:10000000000000000});
+        let user5 = await debankInstance.register('Emily', {from: accounts[5], value:10000000000000000});
+        let user6 = await debankInstance.register('Farhan', {from: accounts[6], value:10000000000000000});
+        let user7 = await debankInstance.register('Graham', {from: accounts[7], value:10000000000000000});
+        let user8 = await debankInstance.register('Henry', {from: accounts[8], value:10000000000000000});
+        let user9 = await debankInstance.register('Inu', {from: accounts[9], value:10000000000000000});
+        truffleAssert.eventEmitted(user1,'registerUser');
+    });
+
     // Test the creation of the Liquidity Pool
     it('Create New Liquidity Pool', async() => {
 
@@ -99,6 +113,13 @@ contract ('Liquidity Pool', function(accounts){
         await truffleAssert.reverts(liquidityPoolInstance.getTransactionFee(3), "The Currency is not supported yet!");      
     });
 
+    it("Lender Deposits Amount into Liquidity Pool (Alternative: Unregistered User)", async () => {
+        
+        // 
+        await truffleAssert.fails(
+            liquidityPoolInstance.deposit(0, 50, 1677628800, {from: accounts[0]}));
+    });
+    
     // Lend currency into Liquidity Pool
     it('Lender Deposits Amount into Liquidity Pool', async() => {
         // get Cro token from Cro contract

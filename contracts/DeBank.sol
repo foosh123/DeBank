@@ -34,6 +34,7 @@ contract DeBank{
     event initializeCroRate(uint256 CroRate);
     event initializeShibRate(uint256 ShibRate);
     event initializeUniRate(uint256 UniRate);
+    event registerUser(uint256 id);
     event Withdraw(uint256 choiceOfCurrency, uint256 amount);
 
 
@@ -88,6 +89,7 @@ contract DeBank{
         uint256 newUserId = numUsers++;
         Users[newUserId] = newUser; 
         CheckUsers[msg.sender] = true;
+        emit registerUser(newUserId);
         return newUserId;   
 
     }
