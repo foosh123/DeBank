@@ -32,7 +32,7 @@ contract('SpotOn', function(accounts) {
     });
 
     it('Add Currencies to SpotOn', async() => {
-        //add currency to spotOn
+        //add 3 different currencies
         let currencyAdded = await SpotOnInstance.addCurrency("Cro");
         let currencyAdded2 = await SpotOnInstance.addCurrency("Shib");
         let currencyAdded3 = await SpotOnInstance.addCurrency("Uni");
@@ -40,12 +40,13 @@ contract('SpotOn', function(accounts) {
         truffleAssert.eventEmitted(currencyAdded2, "CurrencyAdded");
         truffleAssert.eventEmitted(currencyAdded3, "CurrencyAdded");
 
+        //check that the curr//create a contract with the respective params initializedes number is 3
         return SpotOnInstance.getCurrencyNum().then(currencyNum => {
             assert.equal(currencyNum, 3);
         });
-
     })
 
+    //Initialize the first currency rate (croRate)
     it('Initialize CroRate', async() => {
         let initializeCro = await DeBankInstance.initializeCro(3,2);
         truffleAssert.eventEmitted(initializeCro, "initializeCroRate");
@@ -55,6 +56,7 @@ contract('SpotOn', function(accounts) {
         })
     })
 
+    //Initialize the second currency rate (ShibRate)
     it('Initialize ShibRate', async() => {
         let initializeShib = await DeBankInstance.initializeShib(3,2);
         truffleAssert.eventEmitted(initializeShib, "initializeShibRate");
@@ -80,14 +82,16 @@ contract('SpotOn', function(accounts) {
         });
     });
 
+    //Borrower requests for loan, collateral is too little, below 1.5 ratio 
     it('Borrower Requests with Too Little Collateral', async() => {
         try {
             let  = await SpotOnInstance.requestLoan(100, 0, 10, 5, 360, 140, 0, {from:accounts[1]});
         } catch (e) {
             assert(e.message.includes("collateral must be at least 1.5 times of the amount"))
         }
-    });
+    }); 
 
+    //Lender takes on loan that is reqeusted by the borrower 
     it('Lender Takes On Loan', async() => {
         // send tokens to accounts[3] to be lent
         let loanTaken = await SpotOnInstance.takeOnLoan(0, {from:accounts[2]});
@@ -99,11 +103,10 @@ contract('SpotOn', function(accounts) {
         });
     });
 
+    //Check the repayment amount(compounded with interests rate) is correct
     it('Check Repayment Amount(Compounded with Interests Rate)', async() => {
         let repaymentAmount = await SpotOnContractInstance.getSpotOnContractRepaymentAmount(0);
         let interestRate = await SpotOnContractInstance.getInterestRate(0);
-        // console.log(interestRate);
-        // console.log(repaymentAmount);
 
         //testing repayment amount with interest rate of 1.05 compounded monthly for a year
         //With loan amount of 10, 24 will be required to payback with interst rate
@@ -112,6 +115,7 @@ contract('SpotOn', function(accounts) {
         })
     })
 
+    //Lender offers Loan on the platform
     it('Lender Offers Loan', async() => {
         let loanOffer = await SpotOnInstance.offerLoan(100, 0, 10, 5, 360, 150, 0, {from:accounts[3]});
         truffleAssert.eventEmitted(loanOffer, "loanOffered");
@@ -121,6 +125,7 @@ contract('SpotOn', function(accounts) {
         });
     });
 
+    //The Loan offered by the lender is taken on by the borrower
     it('Borrower Takes On Loan', async() => {
         let loanTaken = await SpotOnInstance.takeOnLoan(1, {from:accounts[4]});
         truffleAssert.eventEmitted(loanTaken, "loanTaken");
@@ -131,6 +136,7 @@ contract('SpotOn', function(accounts) {
         });
     });
     
+    //Borrower edits the loan to a lower amount such that collateral is enough to cover (more than 1.5 times)
     it('Borrower Edits Loan Amount, Collateral Enough', async() => {0
         let editAmount = await SpotOnInstance.editAmount(0, 95, {from:accounts[1]});
         truffleAssert.eventEmitted(editAmount, "loanAmountEdited");
@@ -140,7 +146,7 @@ contract('SpotOn', function(accounts) {
         });
     });
 
-
+    //Borrower edits the loan to a higher amount such that it is out of the acceptable range
     it('Borrower Edits Loan Amount, Out of Acceptable Range', async() => {
         try {
             let editAmount = await SpotOnInstance.editAmount(0, 120, {from:accounts[1]});
@@ -150,16 +156,9 @@ contract('SpotOn', function(accounts) {
         }
     });
 
+    //Borrower edits the loan to a higher amount within the acceptable range, but the collateral amount is too low (lower than 1.5 times)
     it('Borrower Edits Loan Amount, Collateral not Enough', async() => {
         try {          
-            // let amount = await SpotOnContractInstance.getAmount(0);
-            // console.log(amount);
-            // // // let amount2 = await SpotOnContractInstance.getAmount(0);
-            // // // console.log(amount2);
-            // let collateralAmount = await SpotOnContractInstance.getCollateralAmount(0);
-            // console.log(collateralAmount);
-            // let ratio = await DeBankInstance.returnRatio(0, 11, 0, collateralAmount);
-            // console.log(ratio);
             let editAmount = await SpotOnInstance.editAmount(0, 105, {from:accounts[1]});
         } catch (e) {
             // console.log(e);
@@ -167,6 +166,7 @@ contract('SpotOn', function(accounts) {
         }
     });
 
+    //Borrower transfers the collateral amount to spotOnContracts
     it('Borrower Transfer Collateral', async() => {
         //add Cro Balance to borrower account
         let borrowerAddCro = await CroInstance.getToken(150, {from:accounts[1]})
@@ -184,7 +184,7 @@ contract('SpotOn', function(accounts) {
         return assert.equal(spotOnContractBalance, 150)
     })
 
-
+    //Borrower adds on to the collateral amount
     it('Borrower Adds on Collateral', async() => {
         let borrowerAddCro = await CroInstance.getToken(50, {from:accounts[1]})
         let addAmount = await SpotOnInstance.addCollateral(0, 50, {from:accounts[1]});
@@ -199,13 +199,15 @@ contract('SpotOn', function(accounts) {
         return assert.equal(spotOnContractBalance, 200)
     });
 
+    //Lender transfers Money to the borrower
     it("Lender Transfer Money", async() => {
         let editAmount = await SpotOnInstance.editAmount(0, 100, {from:accounts[1]});
         let setTransactionFee = await HelperInstance.setTransactionFee(5);
+
         //add Cro Balance to lender account
         let lenderaddCro = await CroInstance.getToken(105, {from:accounts[2]})
         let amount = await SpotOnContractInstance.getAmount(0);
-        // console.log(amount);
+
         // lender transfers money
         let lenderTransfers = await SpotOnInstance.transferAmount(0, {from:accounts[2]});
         truffleAssert.eventEmitted(lenderTransfers, "Transferred");
@@ -217,6 +219,7 @@ contract('SpotOn', function(accounts) {
         return assert.equal(BorrowerBalance, 100);
     })
 
+    //Check that the collected Transsaction Fee is collected in SpotOn Instance
     it("Check Collected Transfer Fee in SpotOn", async() => {
         let spotOnAddress = await SpotOnInstance.getOwner();
         let transactionFee = await SpotOnInstance.getTotalTransactionFee(0);
@@ -224,6 +227,7 @@ contract('SpotOn', function(accounts) {
         return assert.equal(transactionFee, 5);
     })
 
+    //Margin Call is trigered, ratio of collateral amount to amount is less than 120%, warning is given
     it("Trigger Margin Call, Ratio Less Than 120%, Warning is Given", async() => {
         let initializeCro = await DeBankInstance.initializeCro(18,10);
         let croRate = await DeBankInstance.getCroRate(); // 180%
@@ -236,6 +240,7 @@ contract('SpotOn', function(accounts) {
         truffleAssert.eventEmitted(triggerMarginCall, "warningCollateralLow");
     })
 
+    //Margin Call triggered, ratio of collateral amount to amount is less than 105%, spotOnContract is liquidated
     it("Trigger Margin Call, Ratio Less Than 105%, Collateral is Liquidated", async() => {
         let initializeCro = await DeBankInstance.initializeCro(4,2);
         let croRate = await DeBankInstance.getCroRate(); // 200%
