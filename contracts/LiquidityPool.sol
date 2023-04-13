@@ -6,7 +6,6 @@ import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
 import "./DeBank.sol";
-import "./Helper.sol";
 
 contract LiquidityPool {
     
@@ -15,15 +14,13 @@ contract LiquidityPool {
     Shib shib;
     Uni uni;
     DeBank deBankContract;
-    Helper helperContract;
 
-    constructor(DeBank deBankAddress, RNG rngAddress, Cro croAddress, Shib shibAdress, Uni uniAddress, Helper helperAddress) { 
+    constructor(DeBank deBankAddress, RNG rngAddress, Cro croAddress, Shib shibAdress, Uni uniAddress) { 
         deBankContract = deBankAddress; 
         r = rngAddress; 
         cro = croAddress;
         shib = shibAdress;
         uni = uniAddress;
-        helperContract = helperAddress;
     }
 
     struct Deposit {

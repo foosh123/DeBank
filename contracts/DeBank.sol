@@ -21,6 +21,15 @@ contract DeBank{
     uint256 croRate;
     uint256 shibRate;
     uint256 uniRate;
+    uint256 public transactionFee;
+
+    function setTransactionFee(uint256 fee) public {
+        transactionFee = fee;
+    }
+
+    function getTransactionFee() public view returns (uint256) {
+        return transactionFee;
+    }
 
     //
     constructor() {        
