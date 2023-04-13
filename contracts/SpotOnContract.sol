@@ -23,11 +23,19 @@ contract SpotOnContract {
     mapping(uint256 => spotOnContract) public activeSpotOnContracts; // tracks all active spotOnContracts
     mapping(uint256 => spotOnContract) public closedSpotOnContracts; //tracks all closed spotOnContracts
 
+<<<<<<< HEAD
     modifier userOnly() {
         result = Debank.checkUser(msg.sender);
         require(result == true);
         _;
     }
+=======
+    // modifier userOnly(uint256 id) {
+    //     add = Debank.getUserAddress(id);
+    //     require(add == msg.sender);
+    //     _;
+    // }
+>>>>>>> 2943efa5778a392281f1435301641a0c74c4b3b7
 
     function closeContract(uint256 spotOnContractId) public {
         closedSpotOnContracts[spotOnContractId] = activeSpotOnContracts[spotOnContractId];

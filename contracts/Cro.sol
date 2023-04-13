@@ -8,7 +8,7 @@ contract Cro {
     uint256 currentSupply;
     address owner;
     
-    constructor() public {
+    constructor() {
         ERC20 e = new ERC20();
         erc20Contract = e;
         owner = msg.sender;

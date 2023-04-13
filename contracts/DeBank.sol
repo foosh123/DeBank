@@ -13,7 +13,7 @@ library DSMath {
     }
 }
 
-contract Debank{
+contract DeBank{
     using DSMath for uint256;
     Cro cro;
     Shib shib;
@@ -22,7 +22,7 @@ contract Debank{
     uint256 shibRate;
     uint256 uniRate;
 
-    constructor() public {        
+    constructor() {        
         Cro c = new Cro();
         cro = c;
         Shib s = new Shib();
@@ -173,6 +173,14 @@ contract Debank{
 
     function getCroRate() public view returns(uint256) {
         return croRate;
+    }
+
+    function getShibRate() public view returns(uint256) {
+        return shibRate;
+    }
+
+    function getUniRate() public view returns(uint256) {
+        return uniRate;
     }
 
 }
