@@ -590,6 +590,20 @@ contract LiquidityPool {
         require (choiceOfCurrency < numPools, "Invalid Currency Type");
         return pools[choiceOfCurrency].currencyTypeName;
     }
+
+    function getAllCurrency() public view returns (string memory) {
+        string memory output = "";
+        bool first = true;
+        for (uint256 i = 0; i < numPools; i++) {
+            if(first == true) {
+                output = pools[i].currencyTypeName;
+                first = false;
+            } else {
+                output = string(abi.encodePacked(output, ", ", pools[i].currencyTypeName));
+            }
+        }
+        return output;
+    }
     
     // Function to get the user's loan balance for a specified currency
     function getLoanBalance(address user, uint256 choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256) {

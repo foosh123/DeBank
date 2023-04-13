@@ -58,6 +58,12 @@ contract ('Liquidity Pool', function(accounts){
     });
 
     // check the interest rate for lending to pool
+    it('Check Available Currency Pool', async() => {
+        let allCurrencyPools = await liquidityPoolInstance.getAllCurrency();
+        assert.strictEqual(allCurrencyPools, "Cro, Shib, Uni", "Incorrect Available Currency Pool!");
+    })
+
+    // check the interest rate for lending to pool
     it('Check Interest Rate for Lending', async() => {
         
         // Simulate API calling and Set Cro interest rate as 5%
