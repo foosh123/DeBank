@@ -261,7 +261,7 @@ contract ('Liquidity Pool', function(accounts){
         // Calculate/compound interest at Time: 30 April 2023 00:00:00
         // Account[5] borrowed 80 token: 80 * 2 mo. * 0.05 = 8 token
         // total loan + interest as of 30 April 2023 00:00:00: 80 + 8 = 88 token
-        await liquidityPoolInstance.calculateLoanInterestByUser(1682812800,accounts[5]);
+        await liquidityPoolInstance.calculateLoanInterestForBorrower(1682812800,accounts[5]);
         let balance = await liquidityPoolInstance.getLoanBalance(accounts[5], 2);
         assert.strictEqual(balance.toNumber(), 88, "Get Token Failed");
     });
@@ -269,7 +269,43 @@ contract ('Liquidity Pool', function(accounts){
     
     // margin call warning: collateral < x1.2 (Triggered by new loan)
     it('Margin Call Warning: Collateral < x1.2', async() => {
+        await debankInstance.initializeShib(1,1);
+        await debankInstance.initializeCro(1,1);
 
+        // Deposit 10 Cro token as Collateral for Uni tokens
+        await shibInstance.getToken(15, {from:accounts[8]});
+        await liquidityPoolInstance.depositCollateral(1,0,15, {from:accounts[8]});
+
+        let collateralAmount = await liquidityPoolInstance.getCollateralAmountForCurrency(accounts[8], 0);
+
+        assert.strictEqual(collateralAmount.toNumber(), 15, "Get Token Failed");
+
+        // Borrow 10 Uni tokens at Time: 1 March 2023 00:00:00
+        let borrowLoan = await liquidityPoolInstance.borrow(10, 0, 1677628800, {from:accounts[8]});
+
+        truffleAssert.eventEmitted(borrowLoan, "LoanBorrowed");
+
+        let loanAmount = await liquidityPoolInstance.getLoanBalance(accounts[8], 0);
+
+        // check if loan accounted for correctly
+        assert.strictEqual(loanAmount.toNumber(), 10, "Get Token Failed");
+
+        await debankInstance.initializeCro(5,4);
+
+        // Calculate/compound interest at Time: 30 April 2023 00:00:00
+        // Account[5] borrowed 80 token: 80 * 2 mo. * 0.05 = 8 token
+        // total loan + interest as of 30 April 2023 00:00:00: 80 + 8 = 88 token
+        let marginCall = await liquidityPoolInstance.marginCall(accounts[8], 0, 10);
+        // let interest = await liquidityPoolInstance.calculateLoanInterestByUser(1682812800, accounts[6]);
+        
+        // Ratio of Collateral : Loan = 120 : 88*1.2 < 1.2
+        truffleAssert.eventEmitted(marginCall, "MarginCallWarningSent");
+        // truffleAssert.eventEmitted(interest, "CollateralLiquidated");
+
+        let collateralAmount2 = await liquidityPoolInstance.getCollateralAmountForCurrency(accounts[8], 0);
+
+        // total Collateral Amount for Uni tokens should be 0 since it has been liquidated
+        assert.strictEqual(collateralAmount2.toNumber(), 15, "Get Token Failed");
     });
 
     // margin call warning: collateral < x1.2 (Triggered by calculate interest)
@@ -300,7 +336,7 @@ contract ('Liquidity Pool', function(accounts){
         // Calculate/compound interest at Time: 30 April 2023 00:00:00
         // Account[5] borrowed 80 token: 80 * 2 mo. * 0.05 = 8 token
         // total loan + interest as of 30 April 2023 00:00:00: 80 + 8 = 88 token
-        let interest = await liquidityPoolInstance.calculateLoanInterestByUser(1682812800, accounts[6]);
+        let interest = await liquidityPoolInstance.calculateLoanInterestForBorrower(1682812800, accounts[6]);
         
         // Ratio of Collateral : Loan = 120 : 88*1.2 < 1.2
         truffleAssert.eventEmitted(interest, "MarginCallWarningSent");
@@ -314,7 +350,6 @@ contract ('Liquidity Pool', function(accounts){
 
     // margin call liquidate: collateral < x1.05 (Triggered by new loan)
     it('Margin Call Liquidate: Collateral < x1.05', async() => {
-
     });
 
     // margin call liquidate: collateral < x1.05 (Triggered by calculate interest)
@@ -345,7 +380,7 @@ contract ('Liquidity Pool', function(accounts){
         // Calculate/compound interest at Time: 30 April 2023 00:00:00
         // Account[5] borrowed 80 token: 80 * 2 mo. * 0.05 = 8 token
         // total loan + interest as of 30 April 2023 00:00:00: 80 + 8 = 88 token
-        let interest = await liquidityPoolInstance.calculateLoanInterestByUser(1682812800, accounts[7]);
+        let interest = await liquidityPoolInstance.calculateLoanInterestForBorrower(1682812800, accounts[7]);
         
         // Ratio of Collateral : Loan = 120 : 88*2 < 1.05
         truffleAssert.eventEmitted(interest, "CollateralLiquidated");
