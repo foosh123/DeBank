@@ -47,8 +47,7 @@ contract LiquidityPool {
         uint256 poolAmount;       
         uint256 borrowerInterestRate;
         uint256 lenderInterestRate;
-        // address owner;
-        // address prevOwner;
+        uint256 transactionFee;
     }
 
     struct Collateral {
@@ -109,7 +108,8 @@ contract LiquidityPool {
 
     // Only owner can create pools
     function addNewPool(
-        string memory currencyTypeName
+        string memory currencyTypeName,
+        uint256 transactionFee
     ) public payable ownerOnly returns(uint256) {
         //require(numberOfSides > 0);
         // require((amount) > 0.00 ether, "Please deposit a minimum amount to initiate a new currency pool!");
@@ -122,9 +122,8 @@ contract LiquidityPool {
             currencyTypeName,
             0,     
             0,
-            0
-            // msg.sender,  //owner
-            // address(0) //prev owner
+            0,
+            transactionFee
         );
         
         pools[numPools] = newLiquidityPool; //commit to state variable
@@ -153,8 +152,9 @@ contract LiquidityPool {
         //transfer the token
         depositToken(choiceOfCurrency, depositAmount);
 
-        // Each withdrawal will incur a fixed amount of transaction fees based on different token type
-        uint256 transactionFee = helperContract.getTransactionFeeAmount(choiceOfCurrency);
+        // Each withdrawal will incur a fixed amount of transaction fees
+        // Transaction fee is initialised during pool creation and can be set/update by owner 
+        uint256 transactionFee = getTransactionFee(choiceOfCurrency);
 
         // Create a new deposit struct and add it to the deposits mapping for this user
         Deposit memory d= Deposit(depositAmount-transactionFee, time, choiceOfCurrency);
@@ -173,9 +173,9 @@ contract LiquidityPool {
         require(amount > 0, "Withdrawal amount must be greater than 0");
         require(balances[msg.sender][choiceOfCurrency] >= amount, "Insufficient balance");
 
-        
         // Each withdrawal will incur a fixed amount of transaction fees
-        uint256 transactionFee = helperContract.getTransactionFeeAmount(choiceOfCurrency);
+        // Transaction fee is initialised during pool creation and can be set/update by owner 
+        uint256 transactionFee = getTransactionFee(choiceOfCurrency);
 
         // transfer the token
         withdrawToken(choiceOfCurrency, (amount-transactionFee));
@@ -561,6 +561,10 @@ contract LiquidityPool {
         d.time = timestamp;
     }
 
+    function setTransactionFee (uint256 choiceOfCurrency, uint256 fee) public ownerOnly {
+        pools[choiceOfCurrency].transactionFee = fee;
+    }
+
     //----------getter methods-------------
     function getContractOwner() public view returns(address) {
        return _owner;
@@ -615,6 +619,10 @@ contract LiquidityPool {
             }
         }
         return collateralAmount;
+    }
+
+    function getTransactionFee (uint256 choiceOfCurrency) public view returns(uint256) {
+        return pools[choiceOfCurrency].transactionFee;
     }
 
     function removeUserFromUserList(address[] storage arr, address add) internal {

@@ -28,7 +28,7 @@ contract ('Liquidity Pool', function(accounts){
     it('Create New Liquidity Pool', async() => {
 
         // account[0] initialize new cro pool
-        let pool_Cro = await liquidityPoolInstance.addNewPool("Cro", {from: accounts[0]});
+        let pool_Cro = await liquidityPoolInstance.addNewPool("Cro", 5, {from: accounts[0]});
         let getCroToken = await croInstance.getToken(10000, {from:accounts[0]});
         let sendToCroPool = await liquidityPoolInstance.depositToken(0, 10000, {from:accounts[0]});
         truffleAssert.eventEmitted(pool_Cro, 'NewLiquidityPoolAdded');
@@ -46,12 +46,12 @@ contract ('Liquidity Pool', function(accounts){
     it('Add Multiple Liquidity Pools', async() => {
 
         // account[0] initialize new Shib pool
-        let pool_Shib = await liquidityPoolInstance.addNewPool("Shib", {from: accounts[0]});
+        let pool_Shib = await liquidityPoolInstance.addNewPool("Shib", 10, {from: accounts[0]});
         let getShibToken = await shibInstance.getToken(10000, {from:accounts[0]});
         let sendToShibPool = await liquidityPoolInstance.depositToken(1, 10000, {from:accounts[0]});
         truffleAssert.eventEmitted(pool_Shib, 'NewLiquidityPoolAdded');
         
-        let pool_Uni = await liquidityPoolInstance.addNewPool("Uni", {from: accounts[0]});
+        let pool_Uni = await liquidityPoolInstance.addNewPool("Uni", 15, {from: accounts[0]});
         let getUniToken = await uniInstance.getToken(2000, {from:accounts[0]});
         let sendToUniPool = await liquidityPoolInstance.depositToken(2, 2000, {from:accounts[0]});
         truffleAssert.eventEmitted(pool_Uni, 'NewLiquidityPoolAdded');

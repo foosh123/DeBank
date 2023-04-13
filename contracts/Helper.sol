@@ -9,25 +9,13 @@ import "./Cro.sol";
 import "./Shib.sol";
 import "./Uni.sol";
 
-// import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-
 contract Helper {
 
-    // ERC20 erc20Contract;
-    // RNG r = new RNG();
     Cro cro = new Cro();
     Shib shib = new Shib();
     Uni uni = new Uni();
     uint256 public platformFee = 100; //in ether
     uint256 public transactionFee = 10; //in ether
-    //  constructor() public {
-    //     // platformFee = platFee;
-    //     // transactionFee = transFee;
-    // }
-
-    // function setCurrencyConversion(string memory conversion) public {
-    //     currentConversion = conversion;
-    // }
 
     function setTransactionFee(uint256 fee) public {
         transactionFee = fee;
@@ -55,15 +43,15 @@ contract Helper {
             }
     } 
 
-    function getTransactionFeeAmount(uint256 choiceOfCurrency) public pure returns(uint256) {
-        if(choiceOfCurrency == 0) { 
-            return 5;
-        } else if(choiceOfCurrency == 1) {
-            return 10; 
-        } else if(choiceOfCurrency == 2) {
-            return 15;
-        }
-    }  
+    // function getTransactionFeeAmount(uint256 choiceOfCurrency) public pure returns(uint256) {
+    //     if(choiceOfCurrency == 0) { 
+    //         return 5;
+    //     } else if(choiceOfCurrency == 1) {
+    //         return 10; 
+    //     } else if(choiceOfCurrency == 2) {
+    //         return 15;
+    //     }
+    // }
 
     function withdrawFee(uint256 choiceOfCurrency, uint256 amt, address from) public {
         if(choiceOfCurrency == 0) { 
