@@ -64,6 +64,8 @@ contract SpotOnContract {
         return spotOnContractId;
     }
 
+    
+
     //----------------------------------Setters---------------------------------------//
 
     //function set loan start of the spotOnContract
@@ -99,6 +101,11 @@ contract SpotOnContract {
     //function to add collateral to the spotOnContract
     function addCollateral(uint256 spotOnContractId, uint256 collateralAmount) public {
         activeSpotOnContracts[spotOnContractId].collateral += collateralAmount;
+    }
+
+    //function to set new repayment amount when borrower repays amount
+    function setNewRepaymentAmount(uint256 spotOnContractId, uint256 newAmount) public {
+        activeSpotOnContracts[spotOnContractId].repaymentAmount = newAmount;   
     }
 
     //--------------------------------------Getters----------------------------------//

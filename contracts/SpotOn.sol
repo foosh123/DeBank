@@ -42,6 +42,7 @@ contract SpotOn {
     event warningCollateralLow(string addCollateral);
     event loanAmountEdited(uint256 spotOnContractId, uint256 newAmount);
     event collateralAdded(uint256 spotOnContractId, uint256 amount);
+    event contractClosed(uint256 spotOnContractId);
 
     mapping(uint256 => SpotOnContract) public spotOnContracts;  // tracks all loans that have been accepted, to check loanPeriod is valid
     mapping(uint256 => uint256) public transactionFees; //tracks transaction fees in different currencies
@@ -313,6 +314,48 @@ contract SpotOn {
             uni.sendToken(borrower, spotOnContractAddress, amount);
             emit collateralTransferred(choiceOfCurrency, amount);
         } 
+    }
+
+    function repayLoan(uint256 choiceOfCurrency, uint256 spotOnContractId) public isValidCurrency(choiceOfCurrency) userOnly {
+        //checks msg.sender is the borrower
+        address borrower = spot_on_contract.getSpotOnBorrower(spotOnContractId);
+        require (msg.sender == borrower, "only borrower can repay");
+
+        //get the spot on contract
+        uint256 transactionFee = de_bank.getTransactionFee();
+        uint256 repaymentAmount = spot_on_contract.getSpotOnContractRepaymentAmount(spotOnContractId);
+
+        //get lender
+        address lender = spot_on_contract.getSpotOnLender(spotOnContractId);
+        // uint256 newRepaymentAmount = fullRepaymentAmount - amount;
+        // spot_on_contract.setNewRepaymentAmount(spotOnContractId, newRepaymentAmount);
+        address spotOnOwnerAddress = getOwner(); 
+
+        //transfer the respective amount to the lender from borrower depending on the currency type
+        if(choiceOfCurrency == 0) { 
+            require(cro.checkBalance(borrower) >= repaymentAmount + transactionFee, "Insufficient tokens in pool to withdraw");
+            cro.sendToken(borrower, lender, repaymentAmount);
+            cro.sendToken(borrower, spotOnOwnerAddress, transactionFee);
+            emit Transferred(choiceOfCurrency, repaymentAmount);
+        } else if(choiceOfCurrency == 1) {
+            require(shib.checkBalance(borrower) >= repaymentAmount + transactionFee, "Insufficient tokens in pool to withdraw");
+            shib.sendToken(borrower, lender, repaymentAmount);
+            shib.sendToken(borrower, spotOnOwnerAddress, transactionFee);
+            emit Transferred(choiceOfCurrency, repaymentAmount);
+        } else if(choiceOfCurrency == 2) {
+            require(uni.checkBalance(borrower) >= repaymentAmount + transactionFee, "Insufficient tokens in pool to withdraw");
+            uni.sendToken(borrower, lender, repaymentAmount);    
+            uni.sendToken(borrower, spotOnOwnerAddress, transactionFee);
+            emit Transferred(choiceOfCurrency, repaymentAmount);
+        } 
+
+        //add the transactionFee to the mapping which tracks the transactionFee from different choiceofCurrency
+        transactionFees[choiceOfCurrency] += transactionFee;
+
+        // if full amount is repaid or borrower finishes repaying amount => close the contract
+        spot_on_contract.closeContract(spotOnContractId);
+        emit contractClosed(spotOnContractId);
+        
     }
 
     // -------------------------------Getters---------------------------------------//
