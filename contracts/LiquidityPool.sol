@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >= 0.5.0;
-import "./ERC20.sol";
 import "./RNG.sol";
 import "./Cro.sol";
 import "./Shib.sol";
@@ -41,13 +40,12 @@ contract LiquidityPool {
     struct Loan {
         uint256 amount;
         uint256 time;
-        // uint256 interestRate;
         uint256 currencyType;
     }
 
     struct Collateral {
-        uint256 currencyType; //the one wanna borrow
-        uint256 collateralCurrencyType; // what type the collateral is for
+        uint256 currencyType; //the currencyType of the loan
+        uint256 collateralCurrencyType; // what currencyType of the the collateral
         uint256 amount;
     }
 
@@ -150,12 +148,13 @@ contract LiquidityPool {
             transactionFee
         );
         
-        pools[numPools] = newLiquidityPool; //commit to state variable
+        pools[numPools] = newLiquidityPool;
         numPools++;
         
         emit NewLiquidityPoolAdded(currencyTypeName);
         
-        return numPools;   //return new poolId
+        //return new poolId
+        return numPools;
     }
 
     function checkPoolAmount (uint choiceOfCurrency) public isValidCurrency(choiceOfCurrency) view returns (uint256) {
@@ -180,7 +179,7 @@ contract LiquidityPool {
         uint256 transactionFee = getTransactionFee(choiceOfCurrency);
 
         // Create a new deposit struct and add it to the deposits mapping for this user
-        Deposit memory d= Deposit(depositAmount-transactionFee, time, choiceOfCurrency);
+        Deposit memory d = Deposit(depositAmount-transactionFee, time, choiceOfCurrency);
         deposits[msg.sender].push(d);
         
         // Add the deposited amount to the user's balance for the specified currency
@@ -220,7 +219,6 @@ contract LiquidityPool {
             }
         }
 
-
         // Return amount to total pool
         pools[choiceOfCurrency].poolAmount -= amount;
 
@@ -235,7 +233,6 @@ contract LiquidityPool {
         if (isEmpty) {
             removeUserFromUserList(lenderList, msg.sender);
         }
-
 
         emit WithdrawalMade(msg.sender, choiceOfCurrency, amount);
     }
@@ -498,11 +495,6 @@ contract LiquidityPool {
         removeCollateralFromCollateralList(collateralAmounts[borrower], currencyFor);
     }
 
-    //--------------Helper Methods----------------
-    function approveSpender (address spender, uint256 amt) public ownerOnly {
-        shib.approveSpender(spender, amt);
-    }
-
     // Function to check if lender exists
     function doesLenderExist (address lender) private view returns (bool) {
         bool lenderExists = false;
@@ -525,13 +517,11 @@ contract LiquidityPool {
         return borrowerExists;
     }
 
-
     //-----------Pool Token Transfer Methods-----------------
     function depositToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
             require(cro.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
             cro.sendToken(msg.sender, address(this), amt);
-            // cro.sendToken(address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
             require(shib.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
@@ -540,19 +530,17 @@ contract LiquidityPool {
         } else if(choiceOfCurrency == 2) {
             require(uni.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
             uni.sendToken(msg.sender, address(this), amt);
-            // uni.sendToken(address(this), amt);
             emit Transfered(choiceOfCurrency, amt);
         } 
     }
 
     function withdrawToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
-        if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
+        if(choiceOfCurrency == 0) {
             require(cro.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to withdraw");
             cro.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 1) {
             require(shib.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to withdraw");
-            shib.approveSpender(msg.sender, amt);
             shib.sendToken(address(this), msg.sender, amt);
             emit Transfered(choiceOfCurrency, amt);
         } else if(choiceOfCurrency == 2) {
