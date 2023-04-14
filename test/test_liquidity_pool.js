@@ -24,7 +24,8 @@ contract ('Liquidity Pool', function(accounts){
 
     console.log("Testing Liquidity Pool contract");
 
-    //register user
+    // Test Case 1
+    // Register user
     it('Registers Users', async() => {
         let user1 = await debankInstance.register('Adam', {from: accounts[1], value:10000000000000000});
         let user2 = await debankInstance.register('Ben', {from: accounts[2], value:10000000000000000});
@@ -38,6 +39,7 @@ contract ('Liquidity Pool', function(accounts){
         truffleAssert.eventEmitted(user1,'registerUser');
     });
 
+    // Test Case 2
     // Test the creation of the Liquidity Pool
     it('Create New Liquidity Pool', async() => {
 
@@ -48,6 +50,7 @@ contract ('Liquidity Pool', function(accounts){
         truffleAssert.eventEmitted(pool_Cro, 'NewLiquidityPoolAdded');
     });
 
+    // Test Case 3
     // Test the creation of the Liquidity Pool by non Liquidity Pool contract owner, an error is returned
     it("Create New Liquidity Pool (Alternative: Incorrect Liquidity Pool Owner)", async () => {
         
@@ -55,6 +58,7 @@ contract ('Liquidity Pool', function(accounts){
         await truffleAssert.fails(liquidityPoolInstance.addNewPool("Cro", {from: accounts[1]}));
     });
 
+    // Test Case 4
     // Test the creation of multiple Liquidity Pools
     it('Add Multiple Liquidity Pools', async() => {
 
@@ -71,13 +75,15 @@ contract ('Liquidity Pool', function(accounts){
         
     });
 
-    // check the interest rate for lending to pool
+    // Test Case 5
+    // Check the interest rate for lending to pool
     it('Check Available Currency Pool', async() => {
         let allCurrencyPools = await liquidityPoolInstance.getAllCurrency();
         assert.strictEqual(allCurrencyPools, "Cro, Shib, Uni", "Incorrect Available Currency Pool!");
     })
 
-    // check the interest rate for lending to pool
+    // Test Case 6
+    // Check the interest rate for lending to pool
     it('Check Interest Rate for Lending', async() => {
         
         // Simulate API calling and Set Cro interest rate as 5%
@@ -90,13 +96,15 @@ contract ('Liquidity Pool', function(accounts){
 
     });
 
-    // check the interest rate for lending to pool, but invalid currency type
+    // Test Case 7
+    // Check the interest rate for lending to pool, but invalid currency type
     it('Check Interest Rate for Lending (Alternative: Invalid Currency)', async() => {
         // request interest rate for invalid currency type
         await truffleAssert.reverts(liquidityPoolInstance.getLenderInterestRate(8), "The Currency is not supported yet!");
         
     });
 
+    // Test Case 8
     // Check Transaction Fee for Different currency
     it('Lender Checks Transaction Fees', async() => {
         let getCroTransactionFees = await liquidityPoolInstance.getTransactionFee(0);
@@ -108,18 +116,19 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(getUniTransactionFees.toNumber(), 15, "Incorrect Uni Transaction Fees");        
     });
 
-    // Check Transaction Fee  for Different currency (Alternative: Invalid Currency)
+    // Test Case 9
+    // Check Transaction Fee for Different currency (Alternative: Invalid Currency)
     it("Lender Checks Transaction Fees (Alternative: Invalid Currency)", async() => {
         await truffleAssert.reverts(liquidityPoolInstance.getTransactionFee(3), "The Currency is not supported yet!");      
     });
 
+    // Test Case 10
+    // Check if unregistered user is able to deposit tokens into Liquidity Pool
     it("Lender Deposits Amount into Liquidity Pool (Alternative: Unregistered User)", async () => {
-        
-        // 
-        await truffleAssert.fails(
-            liquidityPoolInstance.deposit(0, 50, 1677628800, {from: accounts[0]}));
+        await truffleAssert.fails(liquidityPoolInstance.deposit(0, 50, 1677628800, {from: accounts[0]}));
     });
     
+    // Test Case 11
     // Lend currency into Liquidity Pool
     it('Lender Deposits Amount into Liquidity Pool', async() => {
         // get Cro token from Cro contract
@@ -140,6 +149,7 @@ contract ('Liquidity Pool', function(accounts){
         
     });
 
+    // Test Case 12
     // Lend currency into Liquidity Pool
     it('Lender Deposits Amounts into Multiple Liquidity Pool', async() => {
 
@@ -172,7 +182,8 @@ contract ('Liquidity Pool', function(accounts){
         
     });
 
-    // lend currency with insufficient amount
+    // Test Case 13
+    // Lend currency with insufficient amount
     it('Lender Deposits Amount into Liquidity Pool (Alternative: Insufficient Token Amount)', async() => {
 
         let getCroToken = await croInstance.getToken(15, {from:accounts[2]})
@@ -185,6 +196,7 @@ contract ('Liquidity Pool', function(accounts){
         
     });
 
+    // Test Case 14
     // User Check Balance
     it('Lender Checks Balance', async() => {
 
@@ -193,16 +205,19 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(getCroBalance.toNumber(), 45, "Incorrect Leftover Token Balance");        
     });
 
+    // Test Case 15
     // User Check Balance (Alternative: Cannot Check Other User's Balance)
     it("Lender Checks Balance (Alternative: Cannot Check Other User's Balance)", async() => {
         await truffleAssert.reverts(liquidityPoolInstance.getBalance(accounts[1], 0, {from: accounts[2]}), "You are not authorised to access the balance");      
     });
 
+    // Test Case 16
     // User Check Balance (Alternative: Invalid Currency)
     it("Lender Checks Balance (Alternative: Invalid Currency)", async() => {
         await truffleAssert.reverts(liquidityPoolInstance.getBalance(accounts[1], 4, {from: accounts[1]}), "The Currency is not supported yet!");      
     });
 
+    // Test Case 17
     // Check if interest was compounded correctly
     it('Lender Interest Compounded', async() => {
 
@@ -232,7 +247,8 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(balance.toNumber(), 1600, "Get Token Failed");
     });
 
-    // withdraw currency with correct interest added
+    // Test Case 18
+    // Withdraw currency with correct interest added
     it('Lender Withdraws Amount from Liquidity Pool (With correct interest added)', async() => {
 
         // Get 1515 Uni tokens
@@ -267,7 +283,8 @@ contract ('Liquidity Pool', function(accounts){
         
     });
 
-    // check the interest rate for borrowing from pool
+    // Test Case 19
+    // Check the interest rate for borrowing from pool
     it('Check Interest Rate for Borrowing', async() => {
         
         // Simulate API calling and Set Shib interest rate as 5%
@@ -280,14 +297,16 @@ contract ('Liquidity Pool', function(accounts){
 
     });
 
-    // check the interest rate for borrowing from pool, but invalid currency type
+    // Test Case 20
+    // Check the interest rate for borrowing from pool, but invalid currency type
     it('Check Interest Rate for Borrowing (Alternative: Invalid Currency)', async() => {
         // request interest rate for invalid currency type
         await truffleAssert.reverts(liquidityPoolInstance.getBorrowerInterestRate(4), "The Currency is not supported yet!");
         
     });
 
-    // deposit collateral
+    // Test Case 21
+    // Deposit collateral
     it('Deposit Collateral for Loan from Liquidity Pool', async() => {
         let getCroToken = await croInstance.getToken(150, {from:accounts[4]});
         let depositCollateral = await liquidityPoolInstance.depositCollateral(0,1,150, {from:accounts[4]});
@@ -299,12 +318,14 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(collateralAmount.toNumber(), 150, "Get Token Failed");
     });
 
-    // deposit collateral with insufficient amount
+    // Test Case 22
+    // Deposit collateral with insufficient amount
     it('Deposit Collateral for Loan from Liquidity Pool (Alternative: Insufficient Token Amount)', async() => {
         await truffleAssert.reverts(liquidityPoolInstance.depositCollateral(0,1,150, {from:accounts[4]}), "You dont have enough token to deposit");
     });
 
-    // borrow money with collateral from liquidity pool
+    // Test Case 23
+    // Borrow money with collateral from liquidity pool
     it('Borrower Loan Amount from Liquidity Pool', async() => {
         await debankInstance.initializeCro(1,1);
         await debankInstance.initializeShib(1,1);
@@ -319,17 +340,20 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(loanAmount.toNumber(), 100, "Get Token Failed");
     });
 
-    // borrow money with insufficient loan amount
+    // Test Case 24
+    // Borrow money with insufficient loan amount
     it('Borrower Loan Amount from Liquidity Pool (Alternative: Insufficint Loan Amount)', async() => {
         await truffleAssert.reverts(liquidityPoolInstance.borrow(0, 1, 1677628800, {from:accounts[4]}), "Loan amount must be greater than 0");
     });
 
-    // borrow money with insufficient collateral
+    // Test Case 25
+    // Borrow money with insufficient collateral
     it('Borrower Loan Amount from Liquidity Pool (Alternative: Insufficint Collateral)', async() => {
         await truffleAssert.reverts(liquidityPoolInstance.borrow(150, 1, 1677628800, {from:accounts[4]}), "Insufficient collateral to borrow");
     });
 
-    // calculate interest for borrower
+    // Test Case 26
+    // Calculate interest for borrower
     it('Borrower Interest Compounded', async() => {
 
         // Deposit 120 Cro token as Collateral for Uni tokens
@@ -347,7 +371,7 @@ contract ('Liquidity Pool', function(accounts){
 
         let loanAmount = await liquidityPoolInstance.getLoanBalance(accounts[5], 2);
 
-        // check if loan accounted for correctly
+        // Check if loan accounted for correctly
         assert.strictEqual(loanAmount.toNumber(), 80, "Get Token Failed");
 
         // Set Uni interest rate as 5%
@@ -355,8 +379,6 @@ contract ('Liquidity Pool', function(accounts){
         await liquidityPoolInstance.setBorrowerInterestRate(0);
         await liquidityPoolInstance.setBorrowerInterestRate(1);
         await liquidityPoolInstance.setBorrowerInterestRate(2);
-
-        // let interestRate = await liquidityPoolInstance.getBorrowerInterestRate(2);
 
         // Calculate/compound interest at Time: 30 April 2023 00:00:00
         // Account[5] borrowed 80 token: 80 * 2 mo. * 0.05 = 8 token
@@ -366,7 +388,8 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(balance.toNumber(), 88, "Get Token Failed");
     });
 
-    // return loan amount borrowed back to liquidity pool
+    // Test Case 27
+    // Return loan amount borrowed back to liquidity pool
     it('Borrower Returns Withdrawn Loan Amount Back to Liquidity Pool', async() => {
         let returnLoan = await liquidityPoolInstance.returnLoan(100, 1, {from:accounts[4]});
 
@@ -381,7 +404,8 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(returnCollateralAmount.toNumber(), 150, "Collateral Returned Failed");
     });
     
-    // margin call warning: collateral < x1.2 (Triggered by new loan)
+    // Test Case 28
+    // Margin call warning: collateral < x1.2 (Triggered by new loan)
     it('Margin Call Warning: Collateral Less Than 120%', async() => {
         await debankInstance.initializeShib(1,1);
         await debankInstance.initializeCro(1,1);
@@ -417,7 +441,8 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(collateralAmount2.toNumber(), 15, "Get Token Failed");
     });
 
-    // margin call warning: collateral < x1.2 (Triggered by calculate interest)
+    // Test Case 29
+    // Margin call warning: collateral < x1.2 (Triggered by calculate interest)
     it('Margin Call Warning: Collateral Less Than 120% (Triggered by Calculate Interest)', async() => {
         await debankInstance.initializeShib(1,1);
         await debankInstance.initializeCro(1,1);
@@ -456,7 +481,8 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(collateralAmount2.toNumber(), 15, "Get Token Failed");
     });
 
-    // margin call liquidate: collateral < x1.05 (Triggered by new loan)
+    // Test Case 30
+    // Margin call liquidate: collateral < x1.05 (Triggered by new loan)
     it('Margin Call Liquidate: Collateral Less Than 150%', async() => {
         await debankInstance.initializeShib(1,1);
         await debankInstance.initializeCro(1,1);
@@ -492,7 +518,8 @@ contract ('Liquidity Pool', function(accounts){
         assert.strictEqual(collateralAmount2.toNumber(), 0, "Get Token Failed");
     });
 
-    // margin call liquidate: collateral < x1.05 (Triggered by calculate interest)
+    // Test Case 31
+    // Margin call liquidate: collateral < x1.05 (Triggered by calculate interest)
     it('Margin Call Liquidate: Collateral Less Than 150% (Triggered by Calculate Interest)', async() => {
         await debankInstance.initializeCro(1,1);
         await debankInstance.initializeUni(1,1);
