@@ -378,7 +378,7 @@ contract ('Liquidity Pool', function(accounts){
         //check if collateral is returned to the user
         let returnCollateralAmount = await croInstance.checkBalance(accounts[4]);
 
-        assert.strictEqual(collateralAmount.toNumber(), 150, "Collateral Returned Failed");
+        assert.strictEqual(returnCollateralAmount.toNumber(), 150, "Collateral Returned Failed");
     });
     
     // margin call warning: collateral < x1.2 (Triggered by new loan)

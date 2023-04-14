@@ -370,9 +370,9 @@ contract LiquidityPool {
             //  b. if all loan is cleared, must remove the Collateral instance from the collateralAmount array (use pop)
         uint256 totalLoanAmount = borrowedAmounts[msg.sender][choiceOfCurrency];
         if (totalLoanAmount == 0) {
-            uint256 amount = getCollateralAmountForCurrency(msg.sender, choiceOfCurrency);
+            uint256 collateralAmount = getCollateralAmountForCurrency(msg.sender, choiceOfCurrency);
             uint256 collateralCurrencyType = getCollateralCurrencyType(msg.sender, choiceOfCurrency);
-            withdrawToken(collateralCurrencyType, amount);
+            withdrawToken(collateralCurrencyType, collateralAmount);
             removeCollateralFromCollateralList(collateralAmounts[msg.sender], choiceOfCurrency);
         }
 
