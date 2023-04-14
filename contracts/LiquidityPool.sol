@@ -295,7 +295,7 @@ contract LiquidityPool {
         return count;
     }
 
-    // Function to borrow funds
+    // Function to Borrow Loan
     function borrow(uint256 loanAmount, uint256 choiceOfCurrency, uint256 time) public isValidCurrency(choiceOfCurrency) userOnly {
         require(loanAmount > 0, "Loan amount must be greater than 0");
 
@@ -351,7 +351,7 @@ contract LiquidityPool {
             }
         }
 
-        // transfer the token
+        // Transfer the token
         depositToken(choiceOfCurrency, amount);
 
         // Return amount to total pool
@@ -385,17 +385,7 @@ contract LiquidityPool {
         emit LoanReturned(msg.sender, choiceOfCurrency, amount);
     }
 
-    function getBorrowerCollateral (uint256 choiceOfCurrency, address borrower) public view  isValidCurrency(choiceOfCurrency) returns (Collateral memory) {
-        Collateral memory collateral;
-        for (uint i = 0; i < collateralAmounts[borrower].length; i++) {
-            if (collateralAmounts[borrower][i].collateralCurrencyType == choiceOfCurrency) 
-                {
-                    collateral = collateralAmounts[borrower][i];
-                }
-        }
-        return collateral;
-    }
-
+    // Function to deposit collateral of a specific currency for a loan of a specific currency
     function depositCollateral (uint256 currencyType, uint256 currencyFor, uint256 amount) isValidCurrency(currencyType) public userOnly{
         //check if borrowing currency has collateral ctype 
         // Yes 
@@ -427,7 +417,7 @@ contract LiquidityPool {
         depositToken(currencyType, amount);
     }
 
-    // Function to calculate the interest owed on a user's loan for a specified currency
+    // Function to calculate the interest owed on a borrower's loan for a specified currency
     function calculateLoanInterest(uint256 currentTime) public ownerOnly {
         for (uint i = 0; i < borrowerList.length; i++) {
             address borrower = borrowerList[i];
@@ -436,7 +426,7 @@ contract LiquidityPool {
         
     }
 
-    // Function to calculate the interest owed on a user's loan for a specified currency
+    // Function to calculate the interest owed on a borrower's loan for a specified currency
     function calculateLoanInterestForBorrower(uint256 currentTime, address borrower) public ownerOnly {
         for (uint j = 0; j < numPools; j++) {
             uint256 choiceOfCurrency = j;
@@ -471,6 +461,7 @@ contract LiquidityPool {
         }
     }
 
+    // Function to call marginCall on a borrower's loan
     function marginCall (address borrower, uint256 choiceOfCurrency, uint256 totalLoanAmount) public {
         // go through borrowerList, get the currency loan, check against the collateral using rate x, y
         // margin call OR liquidate accordingly 
@@ -489,7 +480,7 @@ contract LiquidityPool {
         } 
     }
 
-    // Function to liquidate collateral when value ratio falls below trashhold
+    // Function to liquidate collateral when value ratio falls below threshold
     function liquidateCollateral(address borrower, uint256 currencyFor) private {
         // [Margin call] If < x1.05, liquidate (move the amount to the pool), and borrowers can keep the loan amount
         removeCollateralFromCollateralList(collateralAmounts[borrower], currencyFor);
@@ -517,7 +508,9 @@ contract LiquidityPool {
         return borrowerExists;
     }
 
-    //-----------Pool Token Transfer Methods-----------------
+    // -------------------------------Pool Token Transfer Methods---------------------------------------//
+
+    // Function to deposit a specific amount of tokens for a specific currency
     function depositToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) { //choiceOfCurrency == 0 
             require(cro.checkBalance(msg.sender) >= amt, "You dont have enough token to deposit");
@@ -534,6 +527,7 @@ contract LiquidityPool {
         } 
     }
 
+    // Function to withdraw a specific amount of tokens for a specific currency
     function withdrawToken(uint256 choiceOfCurrency, uint256 amt) public isValidCurrency(choiceOfCurrency) {
         if(choiceOfCurrency == 0) {
             require(cro.checkBalance(address(this)) >= amt, "Insufficient tokens in pool to withdraw");
@@ -550,33 +544,42 @@ contract LiquidityPool {
         } 
     }
 
-    //----------setter methods-------------
+    // -------------------------------Setters---------------------------------------//
+    
+    // Function to set lender's interest rate for a specific currency
     function setLenderInterestRate(uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) {
         pools[choiceOfCurrency].lenderInterestRate =  r.generateRandonNumber();
     }
 
+    // Function to set borrower's interest rate for a specific currency
     function setBorrowerInterestRate(uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) {
         pools[choiceOfCurrency].borrowerInterestRate =  r.generateRandonNumber();
     }
 
+    // Function to set deposit time for a deposit
     function setDepositTime(Deposit memory d, uint256 timestamp) public pure {
         d.time = timestamp;
     }
 
+    // Function to set transaction fees
     function setTransactionFee (uint256 choiceOfCurrency, uint256 fee) public ownerOnly isValidCurrency(choiceOfCurrency){
         pools[choiceOfCurrency].transactionFee = fee;
     }
 
-    //----------getter methods-------------
+    // -------------------------------Getters---------------------------------------//
+    
+    // Function to get the contract owner
     function getContractOwner() public view returns(address) {
        return _owner;
     }
 
+    // Function to get the name of the currency
     function getCurrencyName(uint256 choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (string memory) {
         require (choiceOfCurrency < numPools, "Invalid Currency Type");
         return pools[choiceOfCurrency].currencyTypeName;
     }
 
+    // Function to get a list of all the currrencies
     function getAllCurrency() public view returns (string memory) {
         string memory output = "";
         bool first = true;
@@ -591,29 +594,46 @@ contract LiquidityPool {
         return output;
     }
     
-    // Function to get the user's loan balance for a specified currency
+    // Function to get the lender's loan balance for a specified currency
     function getLoanBalance(address user, uint256 choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256) {
         return borrowedAmounts[user][choiceOfCurrency];
     }
 
-    // Function to get the user's balance for a specified currency
+    // Function to get the lender's balance for a specified currency
     function getBalance(address user, uint256 choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256) {
         require (user == msg.sender || _owner == msg.sender, "You are not authorised to access the balance");
         return balances[user][choiceOfCurrency];
     }
 
+    // Function to get borrower's interest rate for a specific currency
     function getBorrowerInterestRate(uint choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256) {
         return pools[choiceOfCurrency].borrowerInterestRate;
     }
 
+    // Function to get lender's interest rate for a specific currency
     function getLenderInterestRate(uint choiceOfCurrency) public view isValidCurrency(choiceOfCurrency) returns (uint256) {
         return pools[choiceOfCurrency].lenderInterestRate;
     }
 
+    // Function to get the array of the lender's deposits
     function getLenderDeposits(address Lender) public view returns (Deposit[] memory) {
         return deposits[Lender];
     }
 
+    // Function to get a specific borrower's collateral for a specific currency choice 
+    function getBorrowerCollateral (uint256 choiceOfCurrency, address borrower) public view  isValidCurrency(choiceOfCurrency) returns (Collateral memory) {
+        Collateral memory collateral;
+        for (uint i = 0; i < collateralAmounts[borrower].length; i++) {
+            if (collateralAmounts[borrower][i].collateralCurrencyType == choiceOfCurrency) 
+                {
+                    collateral = collateralAmounts[borrower][i];
+                }
+        }
+        return collateral;
+    }
+
+
+    // Function to get a specific borrower's collateral amount for loaning a specific currency
     function getCollateralAmountForCurrency (address borrower, uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) view returns (uint256){
         uint256 collateralAmount = 0;
         for (uint i = 0; i < collateralAmounts[borrower].length; i++) {
@@ -625,6 +645,7 @@ contract LiquidityPool {
         return collateralAmount;
     }
 
+    // Function to get a specific borrower's collateral currency type for loaning a specific currency
     function getCollateralCurrencyType (address borrower, uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) view returns (uint256){
         uint256 collateralCurrencyType;
         for (uint i = 0; i < collateralAmounts[borrower].length; i++) {
@@ -636,10 +657,12 @@ contract LiquidityPool {
         return collateralCurrencyType;
     }
 
+    // Function to get the user's transaction fee
     function getTransactionFee (uint256 choiceOfCurrency) public isValidCurrency(choiceOfCurrency) view returns(uint256) {
         return pools[choiceOfCurrency].transactionFee;
     }
 
+    // Function to remove user from either borrower or lender list
     function removeUserFromUserList(address[] storage arr, address add) internal {
         uint index = 0;
         for (uint i = 0; i < arr.length - 1; i++) {
@@ -653,6 +676,7 @@ contract LiquidityPool {
         arr.pop();
     }
 
+    // Function to remove borrower's collateral from the collateral list
     function removeCollateralFromCollateralList(Collateral[] storage arr, uint256 currencyFor) internal {
         uint index = 0;
         for (uint i = 0; i < arr.length; i++) {
