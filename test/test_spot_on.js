@@ -271,6 +271,31 @@ contract('SpotOn', function(accounts) {
         truffleAssert.eventEmitted(triggerMarginCall, "MarginCallTriggered");
     })
 
+    it("Borrower Repays Full Loan Amount", async() => {
+        // lender in contract 1 transfers amount
+        // set the transaction fee to be 5
+        let setTransactionFee = await DeBankInstance.setTransactionFee(5);
+
+        //add Cro Balance to lender account
+        let lenderaddCro = await CroInstance.getToken(105, {from:accounts[3]});
+        let amount = await SpotOnContractInstance.getAmount(1);
+
+        // lender transfers money
+        let lenderTransfers = await SpotOnInstance.transferAmount(1, {from:accounts[3]});
+        truffleAssert.eventEmitted(lenderTransfers, "Transferred");
+
+        //check the account balance of the borrower in terms of the cro currency 
+        let borrowerAddress = await SpotOnContractInstance.getSpotOnBorrower(1);
+        let borrowerAddCro = await CroInstance.getToken(5, {from:accounts[4]});
+        let borrowerBalance = await CroInstance.checkBalance(borrowerAddress);
+
+        //borrower repays full amount
+        let borrowerRepaysAmt = await SpotOnInstance.repayLoan(0, 1, {from:accounts[4]});
+
+        //contract closes
+        truffleAssert.eventEmitted(borrowerRepaysAmt, "contractClosed");
+    })
+
 
 })
 
