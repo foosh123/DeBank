@@ -23,6 +23,15 @@ contract LiquidityPool {
         uni = uniAddress;
     }
 
+    struct liquidityPool {
+        uint256 poolLoanId;   
+        string currencyTypeName;
+        uint256 poolAmount;       
+        uint256 borrowerInterestRate;
+        uint256 lenderInterestRate;
+        uint256 transactionFee;
+    }
+
     struct Deposit {
         uint256 amount;
         uint256 time;
@@ -34,15 +43,6 @@ contract LiquidityPool {
         uint256 time;
         // uint256 interestRate;
         uint256 currencyType;
-    }
-
-    struct liquidityPool {
-        uint256 poolLoanId;   
-        string currencyTypeName;
-        uint256 poolAmount;       
-        uint256 borrowerInterestRate;
-        uint256 lenderInterestRate;
-        uint256 transactionFee;
     }
 
     struct Collateral {
@@ -259,15 +259,10 @@ contract LiquidityPool {
                         }
                     }
                     if (interest > 0) {
-                        // deposit(j,interest, currentTime);
-                        // require(depositAmount > 0, "Deposit amount must be greater than 0");
 
                         // Create a new deposit struct and add it to the deposits mapping for this user
                         Deposit memory d= Deposit(interest, currentTime, choiceOfCurrency);
                         deposits[lender].push(d);
-
-                        //transfer the token
-                        // depositToken(j, interest);
                         
                         // Add the deposited amount to the user's balance for the specified currency
                         balances[lender][choiceOfCurrency] += interest;
@@ -466,9 +461,6 @@ contract LiquidityPool {
                     Loan memory loan = Loan(interest, currentTime, choiceOfCurrency);
                     loans[borrower].push(loan);
 
-                    // transfer the token
-                    withdrawToken(choiceOfCurrency, interest);
-
                     // Add the loan amount to the user's borrowedAmounts for the specified currency
                     borrowedAmounts[borrower][choiceOfCurrency] += interest;
                     // Remove loan amount from total pool
@@ -480,8 +472,6 @@ contract LiquidityPool {
                 marginCall (borrower, choiceOfCurrency, totalLoanAmount);
             }
         }
-        
-        
     }
 
     function marginCall (address borrower, uint256 choiceOfCurrency, uint256 totalLoanAmount) public {
